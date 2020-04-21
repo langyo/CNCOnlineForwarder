@@ -1,6 +1,6 @@
 #include "precompiled.hpp"
 #include "NatNegProxy.hpp"
-#include "InitialPhase.hpp"
+#include <NatNeg/InitialPhase.hpp>
 #include <Logging/Logging.hpp>
 #include <Utility/SimpleWriteHandler.hpp>
 #include <Utility/WeakRefHandler.hpp>

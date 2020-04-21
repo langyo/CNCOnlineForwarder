@@ -1,6 +1,7 @@
 #include "precompiled.hpp"
 #include "SimpleHTTPClient.hpp"
 #include <Logging/Logging.hpp>
+#include <Utility/WithStrand.hpp>
 
 namespace CNCOnlineForwarder::Utility
 {
@@ -10,7 +11,7 @@ namespace CNCOnlineForwarder::Utility
     {
     private:
         using Strand = IOManager::StrandType;
-        using Resolver = WithStrand<boost::asio::ip::tcp::resolver>;
+        using Resolver = Utility::WithStrand<boost::asio::ip::tcp::resolver>;
         using TCPStream = boost::beast::tcp_stream;
         using FlatBuffer = boost::beast::flat_buffer;
         using HTTPRequest = boost::beast::http::request<boost::beast::http::empty_body>;

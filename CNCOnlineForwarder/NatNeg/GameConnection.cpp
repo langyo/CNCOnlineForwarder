@@ -1,6 +1,6 @@
 #include "precompiled.hpp"
 #include "GameConnection.hpp"
-#include "NatNegProxy.hpp"
+#include <NatNeg/NatNegProxy.hpp>
 #include <Logging/Logging.hpp>
 #include <Utility/ProxyAddressTranslator.hpp>
 #include <Utility/WeakRefHandler.hpp>

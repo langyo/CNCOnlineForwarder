@@ -2,7 +2,7 @@
 #include "precompiled.hpp"
 #include <IOManager.hpp>
 
-namespace CNCOnlineForwarder
+namespace CNCOnlineForwarder::Utility
 {
     class ProxyAddressTranslator : public std::enable_shared_from_this<ProxyAddressTranslator>
     {

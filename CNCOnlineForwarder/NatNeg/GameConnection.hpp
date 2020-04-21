@@ -1,8 +1,9 @@
 #pragma once
 #include "precompiled.hpp"
-#include "NatNegPacket.hpp"
+#include <NatNeg/NatNegPacket.hpp>
 #include <IOManager.hpp>
 #include <Utility/ProxyAddressTranslator.hpp>
+#include <Utility/WithStrand.hpp>
 
 namespace CNCOnlineForwarder::NatNeg
 {
@@ -14,8 +15,9 @@ namespace CNCOnlineForwarder::NatNeg
     public:
         using Strand = IOManager::StrandType;
         using EndPoint = boost::asio::ip::udp::endpoint;
-        using Socket = WithStrand<boost::asio::ip::udp::socket>;
-        using Timer = WithStrand<boost::asio::steady_timer>;
+        using Socket = Utility::WithStrand<boost::asio::ip::udp::socket>;
+        using Timer = Utility::WithStrand<boost::asio::steady_timer>;
+        using ProxyAddressTranslator = Utility::ProxyAddressTranslator;
         using NatNegPlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
         using Buffer = std::unique_ptr<char[]>;

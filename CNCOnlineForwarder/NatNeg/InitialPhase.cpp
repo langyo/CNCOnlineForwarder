@@ -1,7 +1,7 @@
 #include "precompiled.hpp"
 #include "InitialPhase.hpp"
-#include "GameConnection.hpp"
-#include "NatNegProxy.hpp"
+#include <NatNeg/GameConnection.hpp>
+#include <NatNeg/NatNegProxy.hpp>
 #include <Logging/Logging.hpp>
 #include <Utility/SimpleWriteHandler.hpp>
 #include <Utility/WeakRefHandler.hpp>

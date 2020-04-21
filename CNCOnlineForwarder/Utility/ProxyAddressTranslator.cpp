@@ -1,13 +1,13 @@
 #include "precompiled.hpp"
 #include "ProxyAddressTranslator.hpp"
-#include "SimpleHTTPClient.hpp"
-#include "WeakRefHandler.hpp"
 #include <Logging/Logging.hpp>
+#include <Utility/SimpleHTTPClient.hpp>
+#include <Utility/WeakRefHandler.hpp>
 
 using ErrorCode = boost::system::error_code;
 using LogLevel = CNCOnlineForwarder::Logging::Level;
 
-namespace CNCOnlineForwarder
+namespace CNCOnlineForwarder::Utility
 {
     template<typename... Arguments>
     void log(LogLevel const level, Arguments&&... arguments)
@@ -80,9 +80,19 @@ namespace CNCOnlineForwarder
 
         auto const action = [](ProxyAddressTranslator& self, std::string newIP)
         {
-            boost::algorithm::trim(newIP);
-            log(LogLevel::info, "Retrieved public IP address: ", newIP);
-            self.setPublicAddress(AddressV4::from_string(newIP));
+            auto ip = std::optional<AddressV4>{};
+            try 
+            {
+                boost::algorithm::trim(newIP);
+                log(LogLevel::info, "Retrieved public IP address: ", newIP);
+                ip = AddressV4::from_string(newIP);
+            }
+            catch (std::exception const& exception) 
+            {
+                log(LogLevel::error, "Failed to parse IP address ", newIP, ": ", exception.what());
+                return;
+            }
+            self.setPublicAddress(ip.value());
         };
         Utility::asyncHttpGet
         (
@@ -99,7 +109,7 @@ namespace CNCOnlineForwarder
         {
             if (code.failed())
             {
-                throw std::system_error{ code, "ProxyAddressTranslator: Async wait failed" };
+                throw std::system_error{ code, "ProxyAddressTranslator: async wait failed" };
             }
             periodicallySetPublicAddress(ref);
         });
