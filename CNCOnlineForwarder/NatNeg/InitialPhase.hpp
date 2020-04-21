@@ -89,8 +89,8 @@ namespace CNCOnlineForwarder::NatNeg
         NatNegPlayerID m_id;
         FutureEndPoint m_server;
         EndPoint m_clientCommunication;
-    public:
 
+    public:
         static constexpr auto description = "InitialPhase";
 
         static std::shared_ptr<InitialPhase> create

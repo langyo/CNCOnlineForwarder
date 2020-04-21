@@ -8,6 +8,9 @@ namespace CNCOnlineForwarder::Utility {
         template<typename T>
         class WithStrandBase
         {
+        protected:
+            IOManager::StrandType& m_strand;
+            T m_object;
         public:
             template<typename... Args>
             WithStrandBase(IOManager::StrandType& strand, Args&&... args) :
@@ -18,10 +21,6 @@ namespace CNCOnlineForwarder::Utility {
             T* operator->() noexcept { return &m_object; }
 
             T const* operator->() const noexcept { return &m_object; }
-
-        protected:
-            IOManager::StrandType& m_strand;
-            T m_object;
         };
     }
 

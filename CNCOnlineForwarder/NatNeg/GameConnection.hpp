@@ -21,8 +21,10 @@ namespace CNCOnlineForwarder::NatNeg
         using NatNegPlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
         using Buffer = std::unique_ptr<char[]>;
+
     private:
         struct PrivateConstructor {};
+
     private:
         Strand m_strand;
         std::weak_ptr<NatNegProxy> m_proxy;
@@ -34,8 +36,8 @@ namespace CNCOnlineForwarder::NatNeg
         Socket m_publicSocketForClient;
         Socket m_fakeRemotePlayerSocket;
         Timer m_timeout;
-    public:
 
+    public:
         static constexpr auto description = "GameConnection";
 
         static std::shared_ptr<GameConnection> create

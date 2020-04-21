@@ -20,9 +20,11 @@ namespace CNCOnlineForwarder::NatNeg
         using AddressV4 = boost::asio::ip::address_v4;
         using NatNegPlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
+
     private:
         struct PrivateConstructor {};
         class ReceiveHandler;
+
     private:
         IOManager::ObjectMaker m_objectMaker;
         Strand m_proxyStrand;
@@ -31,8 +33,8 @@ namespace CNCOnlineForwarder::NatNeg
         std::uint16_t m_serverPort;
         std::unordered_map<NatNegPlayerID, std::weak_ptr<InitialPhase>, NatNegPlayerID::Hash> m_initialPhases;
         std::shared_ptr<ProxyAddressTranslator> m_addressTranslator;
-    public:
 
+    public:
         static constexpr auto description = "NatNegProxy";
 
         static std::shared_ptr<NatNegProxy> create
