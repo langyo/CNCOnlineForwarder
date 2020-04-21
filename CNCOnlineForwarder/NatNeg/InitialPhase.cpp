@@ -1,8 +1,8 @@
-#include "precompiled.h"
-#include "InitialPhase.h"
-#include "GameConnection.h"
-#include "NatNegProxy.h"
-#include <Logging/Logging.h>
+#include "precompiled.hpp"
+#include "InitialPhase.hpp"
+#include "GameConnection.hpp"
+#include "NatNegProxy.hpp"
+#include <Logging/Logging.hpp>
 #include <Utility/SimpleWriteHandler.hpp>
 #include <Utility/WeakRefHandler.hpp>
 

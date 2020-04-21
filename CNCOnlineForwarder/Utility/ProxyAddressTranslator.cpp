@@ -1,8 +1,8 @@
-#include "precompiled.h"
-#include "ProxyAddressTranslator.h"
-#include "SimpleHTTPClient.h"
+#include "precompiled.hpp"
+#include "ProxyAddressTranslator.hpp"
+#include "SimpleHTTPClient.hpp"
 #include "WeakRefHandler.hpp"
-#include <Logging/Logging.h>
+#include <Logging/Logging.hpp>
 
 using ErrorCode = boost::system::error_code;
 using LogLevel = CNCOnlineForwarder::Logging::Level;

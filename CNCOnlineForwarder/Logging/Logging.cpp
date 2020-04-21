@@ -1,6 +1,6 @@
-#include "precompiled.h"
-#include "Logging.h"
-#include <BuildConfiguration.h>
+#include "precompiled.hpp"
+#include "Logging.hpp"
+#include <BuildConfiguration.hpp>
 
 namespace CNCOnlineForwarder::Logging
 {

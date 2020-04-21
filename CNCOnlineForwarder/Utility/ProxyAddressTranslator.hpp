@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.h"
+#include "precompiled.hpp"
 #include <IOManager.hpp>
 
 namespace CNCOnlineForwarder

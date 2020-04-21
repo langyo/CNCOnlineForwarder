@@ -18,24 +18,24 @@ endif()
 
 target_include_directories(${PROJECT_NAME} SYSTEM PRIVATE ${Boost_INCLUDE_DIRS})
 target_include_directories(${PROJECT_NAME} PRIVATE ${PROJECT_SOURCE_DIR})
-target_precompile_headers(${PROJECT_NAME} PRIVATE precompiled.h)
+target_precompile_headers(${PROJECT_NAME} PRIVATE precompiled.hpp)
 target_link_libraries(${PROJECT_NAME} PRIVATE ${Boost_LIBRARIES})
 target_sources(${PROJECT_NAME} PRIVATE
     main.cpp
     IOManager.hpp
     "Utility/ProxyAddressTranslator.cpp"
     "NatNeg/NatNegProxy.cpp"
-    "NatNeg/NatNegProxy.h"
+    "NatNeg/NatNegProxy.hpp"
     "NatNeg/GameConnection.cpp"
-    "NatNeg/GameConnection.h"
+    "NatNeg/GameConnection.hpp"
     "NatNeg/InitialPhase.cpp"
-    "NatNeg/InitialPhase.h"
+    "NatNeg/InitialPhase.hpp"
     "NatNeg/NatNegPacket.hpp"
     "Logging/Logging.cpp"
-    "Logging/Logging.h"
+    "Logging/Logging.hpp"
     "Utility/PendingActions.hpp"
     "Utility/SimpleHTTPClient.cpp"
-    "Utility/SimpleHTTPClient.h"
+    "Utility/SimpleHTTPClient.hpp"
     "Utility/SimpleWriteHandler.hpp"
     "Utility/WeakRefHandler.hpp"
 )

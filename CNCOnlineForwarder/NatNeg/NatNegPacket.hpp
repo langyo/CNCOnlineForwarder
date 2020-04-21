@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.h"
+#include "precompiled.hpp"
 
 namespace CNCOnlineForwarder::NatNeg
 {

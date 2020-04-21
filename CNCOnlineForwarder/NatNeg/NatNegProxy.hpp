@@ -1,8 +1,8 @@
 #pragma once
-#include "precompiled.h"
+#include "precompiled.hpp"
 #include "NatNegPacket.hpp"
 #include <IOManager.hpp>
-#include <Utility/ProxyAddressTranslator.h>
+#include <Utility/ProxyAddressTranslator.hpp>
 
 namespace CNCOnlineForwarder::NatNeg
 {

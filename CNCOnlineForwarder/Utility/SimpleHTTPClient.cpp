@@ -1,6 +1,6 @@
-#include "precompiled.h"
-#include "SimpleHTTPClient.h"
-#include <Logging/Logging.h>
+#include "precompiled.hpp"
+#include "SimpleHTTPClient.hpp"
+#include <Logging/Logging.hpp>
 
 namespace CNCOnlineForwarder::Utility
 {

@@ -1,7 +1,7 @@
-#include "precompiled.h"
-#include "NatNegProxy.h"
-#include "InitialPhase.h"
-#include <Logging/Logging.h>
+#include "precompiled.hpp"
+#include "NatNegProxy.hpp"
+#include "InitialPhase.hpp"
+#include <Logging/Logging.hpp>
 #include <Utility/SimpleWriteHandler.hpp>
 #include <Utility/WeakRefHandler.hpp>
 

@@ -1,6 +1,6 @@
 #pragma once
-#include "precompiled.h"
-#include <Logging/Logging.h>
+#include "precompiled.hpp"
+#include <Logging/Logging.hpp>
 
 namespace CNCOnlineForwarder::Utility
 {

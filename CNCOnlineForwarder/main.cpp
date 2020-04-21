@@ -1,7 +1,7 @@
-#include "precompiled.h"
+#include "precompiled.hpp"
 #include <IOManager.hpp>
-#include <NatNeg/NatNegProxy.h>
-#include <Logging/Logging.h>
+#include <NatNeg/NatNegProxy.hpp>
+#include <Logging/Logging.hpp>
 #include <Utility/WeakRefHandler.hpp>
 
 using AddressV4 = boost::asio::ip::address_v4;
