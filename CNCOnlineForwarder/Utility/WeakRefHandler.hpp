@@ -1,18 +1,21 @@
 #pragma once
-#include <utility>
-#include <memory>
-#include "Logging.h"
+#include "precompiled.h"
+#include <Logging/Logging.h>
 
 namespace CNCOnlineForwarder::Utility
 {
     template<typename Type, typename Handler>
     class WeakRefHandler
     {
+    private:
+        std::weak_ptr<Type> m_ref;
+        Handler m_handler;
+
     public:
         template<typename InputHandler>
-        WeakRefHandler(const std::weak_ptr<Type>& ref, InputHandler&& handler) :
-            ref{ ref },
-            handler{ std::forward<InputHandler>(handler) } 
+        WeakRefHandler(std::weak_ptr<Type> const& ref, InputHandler&& handler) :
+            m_ref{ ref },
+            m_handler{ std::forward<InputHandler>(handler) } 
         {}
 
         template<typename... Arguments>
@@ -20,25 +23,21 @@ namespace CNCOnlineForwarder::Utility
         {
             using namespace Logging;
 
-            const auto self = ref.lock();
+            auto const self = m_ref.lock();
             if (!self)
             {
                 logLine<Type>(Level::error, "Tried to execute deferred action after self is died");
                 return;
             }
 
-            std::invoke(this->handler, *self, std::forward<Arguments>(arguments)...);
+            std::invoke(m_handler, *self, std::forward<Arguments>(arguments)...);
         }
 
         // Allow accessing handler members
         Handler* operator->()
         {
-            return &this->handler;
+            return &m_handler;
         }
-
-    private:
-        std::weak_ptr<Type> ref;
-        Handler handler;
     };
 
     namespace Details
@@ -59,13 +58,13 @@ namespace CNCOnlineForwarder::Utility
     template<typename T, typename Handler>
     auto makeWeakHandler
     (
-        const T& pointer, 
+        T const& pointer, 
         Handler&& handler
     )
     {
         using TemplateCheck = Details::IsTemplate<T>;
         using HandlerValue = std::remove_reference_t<Handler>;
-        if constexpr (std::conjunction_v<TemplateCheck, std::is_convertible<const T&, std::weak_ptr<typename TemplateCheck::HeadType>>>)
+        if constexpr (std::conjunction_v<TemplateCheck, std::is_convertible<T const&, std::weak_ptr<typename TemplateCheck::HeadType>>>)
         {
             return WeakRefHandler<typename TemplateCheck::HeadType, HandlerValue>
             { 

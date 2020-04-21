@@ -1,9 +1,5 @@
 #pragma once
-#include <utility>
-#include <boost/log/core/record.hpp>
-#include <boost/log/sources/record_ostream.hpp>
-#include <boost/log/sources/severity_logger.hpp>
-#include <boost/log/trivial.hpp>
+#include "precompiled.h"
 
 namespace CNCOnlineForwarder::Logging
 {
@@ -22,19 +18,18 @@ namespace CNCOnlineForwarder::Logging
 
     class Logging::LogProxy
     {
+    private:
+        SeverityLogger& m_logger;
+        LogRecord m_record;
+        LogStream m_stream;
     public:
         LogProxy(Logging::SeverityLogger& logger, Level level);
-        LogProxy(const LogProxy&) = delete;
-        LogProxy& operator=(const LogProxy&) = delete;
+        LogProxy(LogProxy const&) = delete;
+        LogProxy& operator=(LogProxy const&) = delete;
         ~LogProxy();
 
         template<typename T>
         LogStream& operator<<(T&& argument);
-
-    private:
-        SeverityLogger& logger;
-        LogRecord record;
-        LogStream stream;
     };
 
     Logging::LogProxy log(Level level);
@@ -44,15 +39,15 @@ namespace CNCOnlineForwarder::Logging
     template<typename T>
     Logging::LogStream& Logging::LogProxy::operator<<(T&& argument)
     {
-        if (this->record)
+        if (m_record)
         {
-            this->stream << std::forward<T>(argument);
+            m_stream << std::forward<T>(argument);
         }
-        return this->stream;
+        return m_stream;
     }
 
     template<typename Type, typename... Arguments>
-    void logLine(const Level level, Arguments&&... arguments)
+    void logLine(Level const level, Arguments&&... arguments)
     {
         auto logProxy = log(level);
         logProxy << Type::description << ": ";

@@ -1,22 +1,18 @@
 #pragma once
-#include <chrono>
-#include <memory>
-#include <boost/asio/bind_executor.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/ip/udp.hpp>
-#include <boost/asio/steady_timer.hpp>
-#include <boost/asio/strand.hpp>
+#include "precompiled.h"
 
 namespace CNCOnlineForwarder
 {
     class IOManager : public std::enable_shared_from_this<IOManager>
     {
-    private:
-        struct PrivateConstructor{};
     public:
         using ContextType = boost::asio::io_context;
         using StrandType = decltype(boost::asio::make_strand(std::declval<ContextType&>()));
         class ObjectMaker;
+    private:
+        struct PrivateConstructor{};
+        ContextType m_context;
+    public:
 
         static constexpr auto description = "IOManager";
 
@@ -27,46 +23,42 @@ namespace CNCOnlineForwarder
 
         IOManager(PrivateConstructor) {}
 
-        auto stop() { return this->context.stop(); }
+        auto stop() { return m_context.stop(); }
 
         auto run() 
         { 
             try
             {
-                return this->context.run();
+                return m_context.run();
             }
             catch (...)
             {
-                this->stop();
+                stop();
                 throw;
             }
         }
-
-    private:
-        ContextType context;
     };
 
     class IOManager::ObjectMaker
     {
+    private:
+        std::weak_ptr<IOManager> m_ioManager;
     public:
         ObjectMaker(std::weak_ptr<IOManager> ioManager) : 
-            ioManager{ std::move(ioManager) } {}
+            m_ioManager{ std::move(ioManager) } {}
 
         template<typename T, typename... Arguments>
         T make(Arguments&&... arguments) const
         {
-            const auto ioManager = std::shared_ptr{ this->ioManager };
-            return T{ ioManager->context, std::forward<Arguments>(arguments)... };
+            auto const ioManager = std::shared_ptr{ m_ioManager };
+            return T{ ioManager->m_context, std::forward<Arguments>(arguments)... };
         }
 
         StrandType makeStrand() const
         {
-            const auto ioManager = std::shared_ptr{ this->ioManager };
-            return boost::asio::make_strand(ioManager->context);
+            auto const ioManager = std::shared_ptr{ m_ioManager };
+            return boost::asio::make_strand(ioManager->m_context);
         }
-
-    private:
-        std::weak_ptr<IOManager> ioManager;
     };
 
     namespace Details
@@ -77,17 +69,17 @@ namespace CNCOnlineForwarder
         public:
             template<typename... Args>
             WithStrandBase(IOManager::StrandType& strand, Args&&... args) :
-                strand{ strand },
-                object{ strand.get_inner_executor(), std::forward<Args>(args)... }
+                m_strand{ strand },
+                m_object{ m_strand.get_inner_executor(), std::forward<Args>(args)... }
             {}
 
-            T* operator->() noexcept { return &this->object; }
+            T* operator->() noexcept { return &m_object; }
 
-            const T* operator->() const noexcept { return &this->object; }
+            T const* operator->() const noexcept { return &m_object; }
 
         protected:
-            IOManager::StrandType& strand;
-            T object;
+            IOManager::StrandType& m_strand;
+            T m_object;
         };
     }
 
@@ -108,32 +100,32 @@ namespace CNCOnlineForwarder
         template<typename MutableBufferSequence, typename EndPoint, typename ReadHandler>
         auto asyncReceiveFrom
         (
-            const MutableBufferSequence& buffers,
+            MutableBufferSequence const& buffers,
             EndPoint& from,
             ReadHandler&& handler
         )
         {
-            return this->object.async_receive_from
+            return m_object.async_receive_from
             (
                 buffers,
                 from,
-                boost::asio::bind_executor(this->strand, std::forward<ReadHandler>(handler))
+                boost::asio::bind_executor(m_strand, std::forward<ReadHandler>(handler))
             );
         }
 
         template<typename ConstBufferSequence, typename EndPoint, typename WriteHandler>
         auto asyncSendTo
         (
-            const ConstBufferSequence& buffers,
-            const EndPoint& to,
+            ConstBufferSequence const& buffers,
+            EndPoint const& to,
             WriteHandler&& handler
         )
         {
-            return this->object.async_send_to
+            return m_object.async_send_to
             (
                 buffers,
                 to,
-                boost::asio::bind_executor(this->strand, std::forward<WriteHandler>(handler))
+                boost::asio::bind_executor(m_strand, std::forward<WriteHandler>(handler))
             );
         }
     };
@@ -146,10 +138,10 @@ namespace CNCOnlineForwarder
         using Details::WithStrandBase<boost::asio::steady_timer>::WithStrandBase;
 
         template<typename WaitHandler>
-        auto asyncWait(const std::chrono::minutes timeout, WaitHandler&& waitHandler)
+        auto asyncWait(std::chrono::minutes const timeout, WaitHandler&& waitHandler)
         {
-            this->object.expires_from_now(timeout);
-            this->object.async_wait(std::forward<WaitHandler>(waitHandler));
+            m_object.expires_from_now(timeout);
+            m_object.async_wait(std::forward<WaitHandler>(waitHandler));
         }
     };
 
@@ -163,12 +155,12 @@ namespace CNCOnlineForwarder
         template<typename ResolveHandler>
         auto asyncResolve
         (
-            const std::string_view host, 
-            const std::string_view service, 
+            std::string_view const host, 
+            std::string_view const service, 
             ResolveHandler&& resolveHandler
         )
         {
-            this->object.async_resolve
+            m_object.async_resolve
             (
                 host,
                 service,

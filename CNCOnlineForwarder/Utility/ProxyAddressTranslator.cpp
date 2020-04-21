@@ -2,7 +2,7 @@
 #include "ProxyAddressTranslator.h"
 #include "SimpleHTTPClient.h"
 #include "WeakRefHandler.hpp"
-#include "Logging.h"
+#include <Logging/Logging.h>
 
 using ErrorCode = boost::system::error_code;
 using LogLevel = CNCOnlineForwarder::Logging::Level;
@@ -10,17 +10,17 @@ using LogLevel = CNCOnlineForwarder::Logging::Level;
 namespace CNCOnlineForwarder
 {
     template<typename... Arguments>
-    void log(const LogLevel level, Arguments&&... arguments)
+    void log(LogLevel const level, Arguments&&... arguments)
     {
         return Logging::logLine<ProxyAddressTranslator>(level, std::forward<Arguments>(arguments)...);
     }
 
     std::shared_ptr<ProxyAddressTranslator> ProxyAddressTranslator::create
     (
-        const IOManager::ObjectMaker& objectMaker
+        IOManager::ObjectMaker const& objectMaker
     )
     {
-        const auto self = std::make_shared<ProxyAddressTranslator>
+        auto const self = std::make_shared<ProxyAddressTranslator>
         (
             PrivateConstructor{},
             objectMaker
@@ -32,44 +32,44 @@ namespace CNCOnlineForwarder
     ProxyAddressTranslator::ProxyAddressTranslator
     (
         PrivateConstructor,
-        const IOManager::ObjectMaker& objectMaker
+        IOManager::ObjectMaker const& objectMaker
     ) :
-        objectMaker{ objectMaker },
-        publicAddress{}
+        m_objectMaker{ objectMaker },
+        m_publicAddress{}
     {
     }
 
     ProxyAddressTranslator::AddressV4 ProxyAddressTranslator::getPublicAddress() const
     {
-        const auto lock = std::scoped_lock{ this->mutex };
-        return this->publicAddress;
+        auto const lock = std::scoped_lock{ m_mutex };
+        return m_publicAddress;
     }
 
-    void ProxyAddressTranslator::setPublicAddress(const AddressV4& newPublicAddress)
+    void ProxyAddressTranslator::setPublicAddress(AddressV4 const& newPublicAddress)
     {
         {
-            const auto lock = std::scoped_lock{ this->mutex };
-            this->publicAddress = newPublicAddress;
+            auto const lock = std::scoped_lock{ m_mutex };
+            m_publicAddress = newPublicAddress;
         }
         log(LogLevel::info, "Public address updated to ", newPublicAddress);
     }
 
     ProxyAddressTranslator::UDPEndPoint ProxyAddressTranslator::localToPublic
     (
-        const UDPEndPoint& endPoint
+        UDPEndPoint const& endPoint
     ) const
     {
         auto publicEndPoint = endPoint;
-        publicEndPoint.address(this->getPublicAddress());
+        publicEndPoint.address(getPublicAddress());
         return publicEndPoint;
     }
 
     void ProxyAddressTranslator::periodicallySetPublicAddress
     (
-        const std::weak_ptr<ProxyAddressTranslator>& ref
+        std::weak_ptr<ProxyAddressTranslator> const& ref
     )
     {
-        auto self = ref.lock();
+        auto const self = ref.lock();
         if (!self)
         {
             log(LogLevel::info, "ProxyAddressTranslator expired, not updating anymore");
@@ -78,7 +78,7 @@ namespace CNCOnlineForwarder
 
         log(LogLevel::info, "Will update public address now.");
 
-        const auto action = [](ProxyAddressTranslator& self, std::string newIP)
+        auto const action = [](ProxyAddressTranslator& self, std::string newIP)
         {
             boost::algorithm::trim(newIP);
             log(LogLevel::info, "Retrieved public IP address: ", newIP);
@@ -86,16 +86,16 @@ namespace CNCOnlineForwarder
         };
         Utility::asyncHttpGet
         (
-            self->objectMaker,
+            self->m_objectMaker,
             "api.ipify.org",
             "/",
             Utility::makeWeakHandler(self, action)
         );
 
         using Timer = boost::asio::steady_timer;
-        const auto timer = std::make_shared<Timer>(self->objectMaker.make<Timer>());
+        auto const timer = std::make_shared<Timer>(self->m_objectMaker.make<Timer>());
         timer->expires_after(std::chrono::minutes{ 1 });
-        timer->async_wait([ref, timer](const ErrorCode& code)
+        timer->async_wait([ref, timer](ErrorCode const& code)
         {
             if (code.failed())
             {

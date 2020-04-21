@@ -1,48 +1,46 @@
 #pragma once
-#include <memory>
-#include <mutex>
-#include <boost/asio/ip/address_v4.hpp>
-#include <boost/asio/ip/udp.hpp>
-#include "IOManager.hpp"
+#include "precompiled.h"
+#include <IOManager.hpp>
 
 namespace CNCOnlineForwarder
 {
     class ProxyAddressTranslator : public std::enable_shared_from_this<ProxyAddressTranslator>
     {
-    private:
-        struct PrivateConstructor {};
     public:
         using AddressV4 = boost::asio::ip::address_v4;
         using UDPEndPoint = boost::asio::ip::udp::endpoint;
+    private:
+        struct PrivateConstructor {};
+    private:
+        IOManager::ObjectMaker m_objectMaker;
+        std::mutex mutable m_mutex;
+        AddressV4 m_publicAddress;
+    public:
 
         static constexpr auto description = "ProxyAddressTranslator";
 
         static std::shared_ptr<ProxyAddressTranslator> create
         (
-            const IOManager::ObjectMaker& objectMaker
+            IOManager::ObjectMaker const& objectMaker
         );
 
         ProxyAddressTranslator
         (
             PrivateConstructor,
-            const IOManager::ObjectMaker& objectMaker
+            IOManager::ObjectMaker const& objectMaker
         );
 
         AddressV4 getPublicAddress() const;
 
-        void setPublicAddress(const AddressV4& newPublicAddress);
+        void setPublicAddress(AddressV4 const& newPublicAddress);
 
-        UDPEndPoint localToPublic(const UDPEndPoint& endPoint) const;
+        UDPEndPoint localToPublic(UDPEndPoint const& endPoint) const;
 
     private:
         static void periodicallySetPublicAddress
         (
-            const std::weak_ptr<ProxyAddressTranslator>& ref
+            std::weak_ptr<ProxyAddressTranslator> const& ref
         );
-
-        IOManager::ObjectMaker objectMaker;
-        mutable std::mutex mutex;
-        AddressV4 publicAddress;
     };
 }
 

@@ -1,9 +1,9 @@
 #include "precompiled.h"
 #include "NatNegProxy.h"
 #include "InitialPhase.h"
-#include "Logging.h"
-#include "SimpleWriteHandler.hpp"
-#include "WeakRefHandler.hpp"
+#include <Logging/Logging.h>
+#include <Utility/SimpleWriteHandler.hpp>
+#include <Utility/WeakRefHandler.hpp>
 
 using UDP = boost::asio::ip::udp;
 using ErrorCode = boost::system::error_code;
@@ -21,6 +21,9 @@ namespace CNCOnlineForwarder::NatNeg
 
     class NatNegProxy::ReceiveHandler
     {
+    private:
+        std::unique_ptr<std::array<char, 1024>> m_buffer;
+        std::unique_ptr<EndPoint> m_from;
     public:
 
         static auto create(NatNegProxy* pointer)
@@ -30,15 +33,15 @@ namespace CNCOnlineForwarder::NatNeg
 
         boost::asio::mutable_buffer getBuffer() 
         { 
-            return boost::asio::buffer(*this->buffer); 
+            return boost::asio::buffer(*m_buffer); 
         }
 
         EndPoint& getFrom() 
         { 
-            return *this->from; 
+            return *m_from; 
         }
 
-        void operator()(NatNegProxy& self, const ErrorCode& code, const std::size_t bytesReceived) const
+        void operator()(NatNegProxy& self, ErrorCode const& code, std::size_t const bytesReceived) const
         {
             self.prepareForNextPacketToServer();
 
@@ -48,29 +51,26 @@ namespace CNCOnlineForwarder::NatNeg
                 return;
             }
 
-            const auto view = PacketView{ {this->buffer->data(), bytesReceived} };
-            self.handlePacketToServer(view, *this->from);
+            auto const view = PacketView{ {m_buffer->data(), bytesReceived} };
+            self.handlePacketToServer(view, *m_from);
         }
 
     private:
         ReceiveHandler() :
-            buffer{ std::make_unique<std::array<char, 1024>>() },
-            from{ std::make_unique<EndPoint>() }
+            m_buffer{ std::make_unique<std::array<char, 1024>>() },
+            m_from{ std::make_unique<EndPoint>() }
         {}
-
-        std::unique_ptr<std::array<char, 1024>> buffer;
-        std::unique_ptr<EndPoint> from;
     };
 
     std::shared_ptr<NatNegProxy> NatNegProxy::create
     (
-        const IOManager::ObjectMaker& objectMaker,
-        const std::string_view serverHostName,
-        const std::uint16_t serverPort,
-        const std::weak_ptr<ProxyAddressTranslator>& addressTranslator
+        IOManager::ObjectMaker const& objectMaker,
+        std::string_view const serverHostName,
+        std::uint16_t const serverPort,
+        std::weak_ptr<ProxyAddressTranslator> const& addressTranslator
     )
     {
-        const auto self = std::make_shared<NatNegProxy>
+        auto const self = std::make_shared<NatNegProxy>
         (
             PrivateConstructor{},
             objectMaker, 
@@ -79,12 +79,12 @@ namespace CNCOnlineForwarder::NatNeg
             addressTranslator
         );
 
-        const auto action = [](NatNegProxy& self)
+        auto const action = [](NatNegProxy& self)
         {
             logLine(LogLevel::info, "NatNegProxy created.");
             self.prepareForNextPacketToServer();
         };
-        boost::asio::defer(self->proxyStrand, makeWeakHandler(self, action));
+        boost::asio::defer(self->m_proxyStrand, makeWeakHandler(self, action));
 
         return self;
     }
@@ -92,26 +92,26 @@ namespace CNCOnlineForwarder::NatNeg
     NatNegProxy::NatNegProxy
     (
         PrivateConstructor,
-        const IOManager::ObjectMaker& objectMaker,
-        const std::string_view serverHostName,
-        const std::uint16_t serverPort,
-        const std::weak_ptr<ProxyAddressTranslator>& addressTranslator
+        IOManager::ObjectMaker const& objectMaker,
+        std::string_view const serverHostName,
+        std::uint16_t const serverPort,
+        std::weak_ptr<ProxyAddressTranslator> const& addressTranslator
     ) :
-        objectMaker{ objectMaker },
-        proxyStrand{ objectMaker.makeStrand() },
-        serverSocket{ proxyStrand, EndPoint{ UDP::v4(), serverPort } },
-        serverHostName{ serverHostName },
-        serverPort{ serverPort },
-        addressTranslator{ addressTranslator }
+        m_objectMaker{ objectMaker },
+        m_proxyStrand{ objectMaker.makeStrand() },
+        m_serverSocket{ m_proxyStrand, EndPoint{ UDP::v4(), serverPort } },
+        m_serverHostName{ serverHostName },
+        m_serverPort{ serverPort },
+        m_addressTranslator{ addressTranslator }
     {}
 
-    void NatNegProxy::sendFromProxySocket(const PacketView packetView, const EndPoint& to)
+    void NatNegProxy::sendFromProxySocket(PacketView const packetView, EndPoint const& to)
     {
         auto action = [data = packetView.copyBuffer(), to](NatNegProxy& self)
         {
             logLine(LogLevel::info, "Sending data to ", to);
             auto writeHandler = WriteHandler{ data };
-            self.serverSocket.asyncSendTo
+            self.m_serverSocket.asyncSendTo
             (
                 writeHandler.getData(), 
                 to, 
@@ -121,22 +121,22 @@ namespace CNCOnlineForwarder::NatNeg
 
         boost::asio::defer
         (
-            this->proxyStrand,
+            m_proxyStrand,
             makeWeakHandler(this, std::move(action))
         );
     }
 
-    void NatNegProxy::removeConnection(const NatNegPlayerID id)
+    void NatNegProxy::removeConnection(NatNegPlayerID const id)
     {
         auto action = [id](NatNegProxy& self)
         {
             logLine(LogLevel::error, "Removing InitaialPhase ", id);
-            self.initialPhases.erase(id);
+            self.m_initialPhases.erase(id);
         };
 
         boost::asio::defer
         (
-            this->proxyStrand, 
+            m_proxyStrand, 
             makeWeakHandler(this, std::move(action))
         );
     }
@@ -144,7 +144,7 @@ namespace CNCOnlineForwarder::NatNeg
     void NatNegProxy::prepareForNextPacketToServer()
     {
         auto handler = ReceiveHandler::create(this);
-        this->serverSocket.asyncReceiveFrom
+        m_serverSocket.asyncReceiveFrom
         (
             handler->getBuffer(),
             handler->getFrom(),
@@ -152,7 +152,7 @@ namespace CNCOnlineForwarder::NatNeg
         );
     }
 
-    void NatNegProxy::handlePacketToServer(const PacketView packet, const EndPoint& from)
+    void NatNegProxy::handlePacketToServer(PacketView const packet, EndPoint const& from)
     {
         if (!packet.isNatNeg())
         {
@@ -160,34 +160,34 @@ namespace CNCOnlineForwarder::NatNeg
             return;
         }
 
-        const auto step = packet.getStep();
-        const auto natNegPlayerIDHolder = packet.getNatNegPlayerID();
+        auto const step = packet.getStep();
+        auto const natNegPlayerIDHolder = packet.getNatNegPlayerID();
         if (!natNegPlayerIDHolder.has_value())
         {
             logLine(LogLevel::info, "Packet of step ", step, " does not have NatNegPlayerID, discarded.");
             return;
         }
-        const auto natNegPlayerID = natNegPlayerIDHolder.value();
+        auto const natNegPlayerID = natNegPlayerIDHolder.value();
 
-        auto& initialPhaseRef = this->initialPhases[natNegPlayerID];
+        auto& initialPhaseRef = m_initialPhases[natNegPlayerID];
         if (initialPhaseRef.expired())
         {
             logLine(LogLevel::info, "New NatNegPlayerID, creating InitialPhase: ", natNegPlayerID);
             initialPhaseRef = InitialPhase::create
             (
-                this->objectMaker,
-                this->weak_from_this(),
+                m_objectMaker,
+                weak_from_this(),
                 natNegPlayerID,
-                this->serverHostName,
-                this->serverPort
+                m_serverHostName,
+                m_serverPort
             );
         }
 
-        const auto initialPhase = initialPhaseRef.lock();
+        auto const initialPhase = initialPhaseRef.lock();
         if (!initialPhase)
         {
             logLine(LogLevel::error, "InitialPhase already expired: ", natNegPlayerID);
-            this->removeConnection(natNegPlayerID);
+            removeConnection(natNegPlayerID);
             return;
         }
 
@@ -195,8 +195,8 @@ namespace CNCOnlineForwarder::NatNeg
         if (step == NatNegStep::init)
         {
             constexpr auto sequenceNumberOffset = 12;
-            const auto sequenceNumber = 
-                static_cast<int>(packet.natNegPacket.at(sequenceNumberOffset));
+            auto const sequenceNumber = 
+                static_cast<int>(packet.getView().at(sequenceNumberOffset));
 
             logLine(LogLevel::info, "Init packet, seq num = ", sequenceNumber);
 
@@ -206,8 +206,8 @@ namespace CNCOnlineForwarder::NatNeg
                 logLine(LogLevel::info, "Preparing GameConnection, client = ", from);
                 initialPhase->prepareGameConnection
                 (
-                    this->objectMaker, 
-                    this->addressTranslator, 
+                    m_objectMaker, 
+                    m_addressTranslator, 
                     from
                 );
             }

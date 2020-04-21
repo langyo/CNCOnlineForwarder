@@ -1,8 +1,8 @@
 #include "precompiled.h"
-#include "IOManager.hpp"
-#include "NatNegProxy.h"
-#include "Logging.h"
-#include "WeakRefHandler.hpp"
+#include <IOManager.hpp>
+#include <NatNeg/NatNegProxy.h>
+#include <Logging/Logging.h>
+#include <Utility/WeakRefHandler.hpp>
 
 using AddressV4 = boost::asio::ip::address_v4;
 using UDP = boost::asio::ip::udp;
@@ -11,7 +11,7 @@ using ErrorCode = boost::system::error_code;
 
 namespace CNCOnlineForwarder
 {
-    void signalHandler(IOManager& manager, const ErrorCode& errorCode, const int signal)
+    void signalHandler(IOManager& manager, ErrorCode const& errorCode, int const signal)
     {
         using namespace Logging;
         if (errorCode.failed())
@@ -35,15 +35,15 @@ namespace CNCOnlineForwarder
         log(Level::info) << "Begin!";
         try
         {
-            const auto ioManager = IOManager::create();
+            auto const ioManager = IOManager::create();
             auto objectMaker = IOManager::ObjectMaker{ ioManager };
 
             auto signals = objectMaker.make<boost::asio::signal_set>(SIGINT, SIGTERM);
             signals.async_wait(makeWeakHandler(ioManager.get(), &signalHandler));
 
-            const auto addressTranslator = ProxyAddressTranslator::create(objectMaker);
+            auto const addressTranslator = ProxyAddressTranslator::create(objectMaker);
 
-            const auto natNegProxy = NatNeg::NatNegProxy::create
+            auto const natNegProxy = NatNeg::NatNegProxy::create
             (
                 objectMaker,
                 "natneg.server.cnc-online.net",
@@ -52,7 +52,7 @@ namespace CNCOnlineForwarder
             );
 
             {
-                const auto runner = [ioManager] { ioManager->run(); };
+                auto const runner = [ioManager] { ioManager->run(); };
                 auto f1 = std::async(std::launch::async, runner);
                 auto f2 = std::async(std::launch::async, runner);
 
@@ -60,7 +60,7 @@ namespace CNCOnlineForwarder
                 f2.get();
             }
         }
-        catch (const std::exception& error)
+        catch (std::exception const& error)
         {
             log(Level::fatal) << "Unhandled exception: " << error.what();
         }
@@ -69,11 +69,12 @@ namespace CNCOnlineForwarder
 }
 
 
-int main(int argc, char** argv)
+int main()
 {
     try
     {
         CNCOnlineForwarder::run();
+
     }
     catch (...)
     {

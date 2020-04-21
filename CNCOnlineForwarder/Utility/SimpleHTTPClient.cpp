@@ -1,6 +1,6 @@
 #include "precompiled.h"
 #include "SimpleHTTPClient.h"
-#include "Logging.h"
+#include <Logging/Logging.h>
 
 namespace CNCOnlineForwarder::Utility
 {
@@ -8,44 +8,6 @@ namespace CNCOnlineForwarder::Utility
     // Performs an HTTP GET and prints the response
     class SimpleHTTPClient : public std::enable_shared_from_this<SimpleHTTPClient>
     {
-        struct PrivateConstructor {};
-    public:
-        static constexpr auto description = "SimpleHTTPClient";
-
-        static void startGet
-        (
-            const IOManager::ObjectMaker& objectMaker,
-            const std::string_view hostName,
-            const std::string_view target,
-            std::function<void(std::string)> onGet
-        )
-        {
-            const auto session = std::make_shared<SimpleHTTPClient>
-            (
-                PrivateConstructor{},
-                objectMaker, 
-                std::move(onGet)
-            );
-            session->run(hostName, "80", target, 11);
-        }
-
-        // Objects are constructed with a strand to
-        // ensure that handlers do not execute concurrently.
-        SimpleHTTPClient
-        (
-            PrivateConstructor,
-            const IOManager::ObjectMaker& objectMaker,
-            std::function<void(std::string)>&& onGet
-        ) :
-            strand{ objectMaker.makeStrand() },
-            resolver{ strand },
-            stream{ strand },
-            buffer{},
-            request{},
-            response{},
-            onGet{ std::move(onGet) }
-        {}
-
     private:
         using Strand = IOManager::StrandType;
         using Resolver = WithStrand<boost::asio::ip::tcp::resolver>;
@@ -60,8 +22,57 @@ namespace CNCOnlineForwarder::Utility
 
         using LogLevel = Logging::Level;
 
+        struct PrivateConstructor {};
+
+    private:
+        Strand m_strand;
+        Resolver m_resolver;
+        TCPStream m_stream;
+        FlatBuffer m_buffer; // (Must persist between reads)
+        HTTPRequest m_request;
+        HTTPResponse m_response;
+        std::function<void(std::string)> m_onGet;
+
+    public:
+        static constexpr auto description = "SimpleHTTPClient";
+
+        static void startGet
+        (
+            IOManager::ObjectMaker const& objectMaker,
+            std::string_view const hostName,
+            std::string_view const target,
+            std::function<void(std::string)> onGet
+        )
+        {
+            auto const session = std::make_shared<SimpleHTTPClient>
+            (
+                PrivateConstructor{},
+                objectMaker, 
+                std::move(onGet)
+            );
+            session->run(hostName, "80", target, 11);
+        }
+
+        // Objects are constructed with a strand to
+        // ensure that handlers do not execute concurrently.
+        SimpleHTTPClient
+        (
+            PrivateConstructor,
+            IOManager::ObjectMaker const& objectMaker,
+            std::function<void(std::string)>&& onGet
+        ) :
+            m_strand{ objectMaker.makeStrand() },
+            m_resolver{ m_strand },
+            m_stream{ m_strand },
+            m_buffer{},
+            m_request{},
+            m_response{},
+            m_onGet{ std::move(onGet) }
+        {}
+
+    private:
         template<typename... Arguments>
-        static void log(const LogLevel level, Arguments&&... arguments)
+        static void log(LogLevel const level, Arguments&&... arguments)
         {
             return Logging::logLine<SimpleHTTPClient>(level, std::forward<Arguments>(arguments)...);
         }
@@ -69,36 +80,36 @@ namespace CNCOnlineForwarder::Utility
         // Start the asynchronous operation
         void run
         (
-            const std::string_view host,
-            const std::string_view port,
-            const std::string_view target,
+            std::string_view const host,
+            std::string_view const port,
+            std::string_view const target,
             int version
         )
         {
             namespace Http = boost::beast::http;
             // Set up an HTTP GET request message
-            this->request.version(version);
-            this->request.method(Http::verb::get);
-            this->request.target({ target.data(), target.size() });
-            this->request.set(Http::field::host, host);
-            this->request.set(Http::field::user_agent, BOOST_BEAST_VERSION_STRING);
+            m_request.version(version);
+            m_request.method(Http::verb::get);
+            m_request.target({ target.data(), target.size() });
+            m_request.set(Http::field::host, host);
+            m_request.set(Http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
             log(LogLevel::info, "Starting HTTP Get on ", host, "/", target);
 
             // Look up the domain name
-            this->resolver.asyncResolve
+            m_resolver.asyncResolve
             (
                 host,
                 port,
                 boost::beast::bind_front_handler
                 (
                     &SimpleHTTPClient::onResolve,
-                    this->shared_from_this()
+                    shared_from_this()
                 )
             );
         }
 
-        void onResolve(const ErrorCode& code, const ResolvedHostName& results)
+        void onResolve(ErrorCode const& code, ResolvedHostName const& results)
         {
             if (code.failed())
             {
@@ -107,23 +118,23 @@ namespace CNCOnlineForwarder::Utility
             }
 
             // Set a timeout on the operation
-            this->stream.expires_after(std::chrono::seconds(30));
+            m_stream.expires_after(std::chrono::seconds(30));
 
             log(LogLevel::info, "Hostname resolved. Connecting...");
 
             // Make the connection on the IP address we get from a lookup
-            this->stream.async_connect
+            m_stream.async_connect
             (
                 results,
                 boost::beast::bind_front_handler
                 (
                     &SimpleHTTPClient::onConnect,
-                    this->shared_from_this()
+                    shared_from_this()
                 )
             );
         }
 
-        void onConnect(const ErrorCode& code, const TCPEndPoint& endPoint)
+        void onConnect(ErrorCode const& code, TCPEndPoint const& endPoint)
         {
             if (code.failed())
             {
@@ -132,24 +143,24 @@ namespace CNCOnlineForwarder::Utility
             }
 
             // Set a timeout on the operation
-            this->stream.expires_after(std::chrono::seconds(30));
+            m_stream.expires_after(std::chrono::seconds(30));
 
             log(LogLevel::info, "Connected to ", endPoint, "; Writing header.");
 
             // Send the HTTP request to the remote host
             boost::beast::http::async_write
             (
-                this->stream,
-                this->request,
+                m_stream,
+                m_request,
                 boost::beast::bind_front_handler
                 (
                     &SimpleHTTPClient::onWrite,
-                    this->shared_from_this()
+                    shared_from_this()
                 )
             );
         }
 
-        void onWrite(const ErrorCode& code, const std::size_t /* bytesTransferred */)
+        void onWrite(ErrorCode const& code, std::size_t const /* bytesTransferred */)
         {
             if (code.failed())
             {
@@ -162,18 +173,18 @@ namespace CNCOnlineForwarder::Utility
             // Receive the HTTP response
             boost::beast::http::async_read
             (
-                this->stream,
-                this->buffer,
-                this->response,
+                m_stream,
+                m_buffer,
+                m_response,
                 boost::beast::bind_front_handler
                 (
                     &SimpleHTTPClient::onRead,
-                    this->shared_from_this()
+                    shared_from_this()
                 )
             );
         }
 
-        void onRead(const ErrorCode& code, const std::size_t /* bytesTransferred */)
+        void onRead(ErrorCode const& code, std::size_t const /* bytesTransferred */)
         {
             if (code.failed())
             {
@@ -183,36 +194,28 @@ namespace CNCOnlineForwarder::Utility
 
             // Write the message to standard out
             auto stringStream = std::stringstream{};
-            stringStream << this->response.body();
+            stringStream << m_response.body();
             
             log(LogLevel::info, "Response read.");
-            this->onGet(stringStream.str());
+            m_onGet(stringStream.str());
 
             // Gracefully close the socket
             try
             {
-                this->stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both);
+                m_stream.socket().shutdown(boost::asio::ip::tcp::socket::shutdown_both);
             }
-            catch (const std::exception& error)
+            catch (std::exception const& error)
             {
                 log(LogLevel::warning, "Socket shutdown failed: ", error.what());
             }
         }
-
-        Strand strand;
-        Resolver resolver;
-        TCPStream stream;
-        FlatBuffer buffer; // (Must persist between reads)
-        HTTPRequest request;
-        HTTPResponse response;
-        std::function<void(std::string)> onGet;
     };
 
     void asyncHttpGet
     (
-        const IOManager::ObjectMaker& objectMaker,
-        const std::string_view hostName,
-        const std::string_view target,
+        IOManager::ObjectMaker const& objectMaker,
+        std::string_view const hostName,
+        std::string_view const target,
         std::function<void(std::string)> onGet
     )
     {

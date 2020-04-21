@@ -1,9 +1,10 @@
 #include "precompiled.h"
 #include "GameConnection.h"
-#include "Logging.h"
 #include "NatNegProxy.h"
-#include "ProxyAddressTranslator.h"
-#include "WeakRefHandler.hpp"
+#include <Logging/Logging.h>
+#include <Utility/ProxyAddressTranslator.h>
+#include <Utility/WeakRefHandler.hpp>
+
 
 using UDP = boost::asio::ip::udp;
 using ErrorCode = boost::system::error_code;
@@ -22,34 +23,40 @@ namespace CNCOnlineForwarder::NatNeg
     template<typename NextAction, typename Handler>
     class ReceiveHandler
     {
+    private:
+        std::size_t m_size;
+        GameConnection::Buffer m_buffer;
+        std::unique_ptr<GameConnection::EndPoint> m_from;
+        NextAction m_nextAction;
+        Handler m_handler;
     public:
         template<typename InputNextAction, typename InputNextHandler>
         ReceiveHandler(InputNextAction&& nextAction, InputNextHandler&& handler) :
-            size{ 512 },
-            buffer{ std::make_unique<char[]>(this->size) },
-            from{ std::make_unique<GameConnection::EndPoint>() },
-            nextAction{ std::forward<InputNextAction>(nextAction) },
-            handler{ std::forward<InputNextHandler>(handler) }
+            m_size{ 512 },
+            m_buffer{ std::make_unique<char[]>(m_size) },
+            m_from{ std::make_unique<GameConnection::EndPoint>() },
+            m_nextAction{ std::forward<InputNextAction>(nextAction) },
+            m_handler{ std::forward<InputNextHandler>(handler) }
         {}
 
         boost::asio::mutable_buffer getBuffer() const noexcept
         {
-            return boost::asio::buffer(this->buffer.get(), this->size);
+            return boost::asio::buffer(m_buffer.get(), m_size);
         }
 
         GameConnection::EndPoint& getFrom() const noexcept
         {
-            return *this->from;
+            return *m_from;
         }
 
         void operator()
         (
             GameConnection& self, 
-            const ErrorCode& code, 
-            const std::size_t bytesReceived
+            ErrorCode const& code, 
+            std::size_t const bytesReceived
         )
         {
-            this->nextAction(self);
+            m_nextAction(self);
 
             if (code.failed())
             {
@@ -57,26 +64,19 @@ namespace CNCOnlineForwarder::NatNeg
                 return;
             }
 
-            if (bytesReceived >= this->size)
+            if (bytesReceived >= m_size)
             {
-                logLine(LogLevel::warning, "Received data may be truncated: ", bytesReceived, "/",  this->size);
+                logLine(LogLevel::warning, "Received data may be truncated: ", bytesReceived, "/",  m_size);
             }
 
-            return this->handler
+            return m_handler
             (
                 self, 
-                std::move(this->buffer), 
+                std::move(m_buffer), 
                 bytesReceived, 
-                this->getFrom()
+                getFrom()
             );
         }
-
-    private:
-        std::size_t size;
-        GameConnection::Buffer buffer;
-        std::unique_ptr<GameConnection::EndPoint> from;
-        NextAction nextAction;
-        Handler handler;
     };
 
     template<typename NextAction, typename Handler>
@@ -103,22 +103,25 @@ namespace CNCOnlineForwarder::NatNeg
 
     class SendHandler
     {
+    private:
+        GameConnection::Buffer m_buffer;
+        std::size_t m_bytes;
     public:
         SendHandler
         (
             GameConnection::Buffer buffer,
-            const std::size_t bytes
+            std::size_t const bytes
         ) :
-            buffer{ std::move(buffer) },
-            bytes{ bytes }
+            m_buffer{ std::move(buffer) },
+            m_bytes{ bytes }
         {}
 
         boost::asio::const_buffer getBuffer() const noexcept
         {
-            return boost::asio::buffer(this->buffer.get(), this->bytes);
+            return boost::asio::buffer(m_buffer.get(), m_bytes);
         }
 
-        void operator()(const ErrorCode& code, std::size_t bytesSent) const
+        void operator()(ErrorCode const& code, std::size_t const bytesSent) const
         {
             if (code.failed())
             {
@@ -126,28 +129,24 @@ namespace CNCOnlineForwarder::NatNeg
                 return;
             }
 
-            if (bytesSent != this->bytes)
+            if (bytesSent != m_bytes)
             {
-                logLine(LogLevel::error, "Only part of packet was sent: ", bytesSent, "/", this->bytes);
+                logLine(LogLevel::error, "Only part of packet was sent: ", bytesSent, "/", m_bytes);
                 return;
             }
         }
-
-    private:
-        GameConnection::Buffer buffer;
-        std::size_t bytes;
     };
 
     std::shared_ptr<GameConnection> GameConnection::create
     (
-        const IOManager::ObjectMaker& objectMaker,
-        const std::weak_ptr<NatNegProxy>& proxy,
-        const std::weak_ptr<ProxyAddressTranslator>& addressTranslator,
-        const EndPoint& server,
-        const EndPoint& client
+        IOManager::ObjectMaker const& objectMaker,
+        std::weak_ptr<NatNegProxy> const& proxy,
+        std::weak_ptr<ProxyAddressTranslator> const& addressTranslator,
+        EndPoint const& server,
+        EndPoint const& client
     )
     {
-        const auto self = std::make_shared<GameConnection>
+        auto const self = std::make_shared<GameConnection>
         (
             PrivateConstructor{},
             objectMaker, 
@@ -157,13 +156,13 @@ namespace CNCOnlineForwarder::NatNeg
             client
         );
 
-        const auto action = [self]
+        auto const action = [self]
         {
-            logLine(LogLevel::info, "New Connection ", self, " created, client = ", self->clientPublicAddress);
+            logLine(LogLevel::info, "New Connection ", self, " created, client = ", self->m_clientPublicAddress);
             self->extendLife();
             self->prepareForNextPacketToClient();
         };
-        boost::asio::defer(self->strand, action);
+        boost::asio::defer(self->m_strand, action);
 
         return self;
     }
@@ -171,34 +170,34 @@ namespace CNCOnlineForwarder::NatNeg
     GameConnection::GameConnection
     (
         PrivateConstructor,
-        const IOManager::ObjectMaker& objectMaker,
-        const std::weak_ptr<NatNegProxy>& proxy,
-        const std::weak_ptr<ProxyAddressTranslator>& addressTranslator,
-        const EndPoint& server,
-        const EndPoint& clientPublicAddress
+        IOManager::ObjectMaker const& objectMaker,
+        std::weak_ptr<NatNegProxy> const& proxy,
+        std::weak_ptr<ProxyAddressTranslator> const& addressTranslator,
+        EndPoint const& server,
+        EndPoint const& clientPublicAddress
     ) :
-        strand{ objectMaker.makeStrand() },
-        proxy{ proxy },
-        addressTranslator{ addressTranslator },
-        server{ server },
-        clientPublicAddress{ clientPublicAddress },
-        clientRealAddress{ clientPublicAddress },
-        remotePlayer{},
-        publicSocketForClient{ strand, EndPoint{ UDP::v4(), 0 } },
-        fakeRemotePlayerSocket{ strand, EndPoint{ UDP::v4(), 0 } },
-        timeout{ strand }
+        m_strand{ objectMaker.makeStrand() },
+        m_proxy{ proxy },
+        m_addressTranslator{ addressTranslator },
+        m_server{ server },
+        m_clientPublicAddress{ clientPublicAddress },
+        m_clientRealAddress{ clientPublicAddress },
+        m_remotePlayer{},
+        m_publicSocketForClient{ m_strand, EndPoint{ UDP::v4(), 0 } },
+        m_fakeRemotePlayerSocket{ m_strand, EndPoint{ UDP::v4(), 0 } },
+        m_timeout{ m_strand }
     {}
 
-    const GameConnection::EndPoint& GameConnection::getClientPublicAddress() const noexcept
+    GameConnection::EndPoint const& GameConnection::getClientPublicAddress() const noexcept
     {
-        return this->clientPublicAddress;
+        return m_clientPublicAddress;
     }
 
-    void GameConnection::handlePacketToServer(const PacketView packet)
+    void GameConnection::handlePacketToServer(PacketView const packet)
     {
         auto action = [data = packet.copyBuffer()](GameConnection& self)
         {
-            const auto packet = PacketView{ data };
+            auto const packet = PacketView{ data };
             if (!packet.isNatNeg())
             {
                 logLine(LogLevel::warning, "Packet to server is not NatNeg, discarded.");
@@ -208,27 +207,27 @@ namespace CNCOnlineForwarder::NatNeg
             logLine(LogLevel::info, "Packet to server handler: NatNeg step ", packet.getStep());
             logLine(LogLevel::info, "Sending data to server through client public socket...");
 
-            const auto& packetContent = packet.natNegPacket;
+            auto const& packetContent = packet.getView();
             auto copy = std::make_unique<char[]>(packetContent.size());
             std::copy_n(packetContent.begin(), packetContent.size(), copy.get());
             auto handler = SendHandler{ std::move(copy), packetContent.size() };
-            self.publicSocketForClient.asyncSendTo
+            self.m_publicSocketForClient.asyncSendTo
             (
                 handler.getBuffer(),
-                self.server,
+                self.m_server,
                 std::move(handler)
             );
 
             self.extendLife();
         };
 
-        boost::asio::defer(this->strand, makeWeakHandler(this, std::move(action)));
+        boost::asio::defer(m_strand, makeWeakHandler(this, std::move(action)));
     }
 
     void GameConnection::handleCommunicationPacketFromServer
     (
-        const PacketView packet,
-        const EndPoint& communicationAddress
+        PacketView const packet,
+        EndPoint const& communicationAddress
     )
     {
         auto action = [data = packet.copyBuffer(), communicationAddress](GameConnection& self)
@@ -240,12 +239,12 @@ namespace CNCOnlineForwarder::NatNeg
             );
         };
 
-        boost::asio::defer(this->strand, makeWeakHandler(this, std::move(action)));
+        boost::asio::defer(m_strand, makeWeakHandler(this, std::move(action)));
     }
 
     void GameConnection::extendLife()
     {
-        auto waitHandler = [self = this->shared_from_this()](const ErrorCode& code)
+        auto waitHandler = [self = shared_from_this()](ErrorCode const& code)
         {
             if (code == boost::asio::error::operation_aborted)
             {
@@ -260,29 +259,29 @@ namespace CNCOnlineForwarder::NatNeg
             logLine(LogLevel::error, "Timeout reached, closing self: ", self.get());
         };
 
-        this->timeout.asyncWait(std::chrono::minutes{ 1 }, std::move(waitHandler));
+        m_timeout.asyncWait(std::chrono::minutes{ 1 }, std::move(waitHandler));
     }
 
     void GameConnection::prepareForNextPacketFromClient()
     {
-        const auto then = [](GameConnection& self)
+        auto const then = [](GameConnection& self)
         {
             return self.prepareForNextPacketFromClient();
         };
 
-        const auto dispatcher = []
+        auto const dispatcher = []
         (
             GameConnection& self, 
             Buffer&& data, 
-            const std::size_t size,
-            const EndPoint& from
+            std::size_t const size,
+            EndPoint const& from
         )
         {
             return self.handlePacketToRemotePlayer(std::move(data), size, from);
         };
 
         auto handler = makeReceiveHandler(this, then, dispatcher);
-        this->fakeRemotePlayerSocket.asyncReceiveFrom
+        m_fakeRemotePlayerSocket.asyncReceiveFrom
         (
             handler->getBuffer(),
             handler->getFrom(),
@@ -292,20 +291,20 @@ namespace CNCOnlineForwarder::NatNeg
 
     void GameConnection::prepareForNextPacketToClient()
     {
-        const auto then = [](GameConnection& self)
+        auto const then = [](GameConnection& self)
         {
             return self.prepareForNextPacketToClient();
         };
 
-        const auto dispatcher = []
+        auto const dispatcher = []
         (
             GameConnection& self, 
             Buffer&& data,
-            const std::size_t size,
-            const EndPoint& from
+            std::size_t const size,
+            EndPoint const& from
         )
         {
-            if (from == self.server)
+            if (from == self.m_server)
             {
                 return self.handlePacketFromServer(std::move(data), size);
             }
@@ -313,7 +312,7 @@ namespace CNCOnlineForwarder::NatNeg
             return self.handlePacketFromRemotePlayer(std::move(data), size, from);
         };
         auto handler = makeReceiveHandler(this, then, dispatcher);
-        this->publicSocketForClient.asyncReceiveFrom
+        m_publicSocketForClient.asyncReceiveFrom
         (
             handler->getBuffer(),
             handler->getFrom(),
@@ -321,16 +320,16 @@ namespace CNCOnlineForwarder::NatNeg
         );
     }
 
-    void GameConnection::handlePacketFromServer(Buffer buffer, const std::size_t size)
+    void GameConnection::handlePacketFromServer(Buffer buffer, std::size_t const size)
     {
-        const auto proxy = this->proxy.lock();
+        auto const proxy = m_proxy.lock();
         if (!proxy)
         {
             logLine(LogLevel::warning, "Proxy already died when handling packet from server");
             return;
         }
 
-        const auto packet = PacketView{ { buffer.get(), size } };
+        auto const packet = PacketView{ { buffer.get(), size } };
 
         if (!packet.isNatNeg())
         {
@@ -340,18 +339,18 @@ namespace CNCOnlineForwarder::NatNeg
 
         logLine(LogLevel::info, "Packet from server handler: NatNeg step ", packet.getStep());
         logLine(LogLevel::info, "Packet from server will be send to client from proxy.");
-        proxy->sendFromProxySocket(packet, this->clientPublicAddress);
+        proxy->sendFromProxySocket(packet, m_clientPublicAddress);
 
-        this->extendLife();
+        extendLife();
     }
 
     void GameConnection::handleCommunicationPacketFromServerInternal
     (
-        const PacketView packet,
-        const EndPoint& communicationAddress
+        PacketView const packet,
+        EndPoint const& communicationAddress
     )
     {
-        const auto proxy = this->proxy.lock();
+        auto const proxy = m_proxy.lock();
         if (!proxy)
         {
             logLine(LogLevel::error, "Proxy already died when handling CommPacket from server");
@@ -360,98 +359,98 @@ namespace CNCOnlineForwarder::NatNeg
 
         logLine(LogLevel::info, "CommPacket handler: NatNeg step ", packet.getStep());
 
-        auto outputBuffer = std::string{ packet.natNegPacket };
-        const auto addressOffset = PacketView::getAddressOffset(packet.getStep());
+        auto outputBuffer = std::string{ packet.getView() };
+        auto const addressOffset = PacketView::getAddressOffset(packet.getStep());
         if (addressOffset.has_value())
         {
             logLine(LogLevel::info, "CommPacket contains address, will try to rewrite it");
 
             {
-                const auto[ip, port] = parseAddress(packet.natNegPacket, addressOffset.value());
-                this->remotePlayer.address(boost::asio::ip::address_v4{ ip });
-                this->remotePlayer.port(boost::endian::big_to_native(port));
-                logLine(LogLevel::info, "CommPacket's address stored in this->remotePlayer: ", this->remotePlayer);
+                auto const[ip, port] = parseAddress(packet.getView(), addressOffset.value());
+                m_remotePlayer.address(boost::asio::ip::address_v4{ ip });
+                m_remotePlayer.port(boost::endian::big_to_native(port));
+                logLine(LogLevel::info, "CommPacket's address stored in m_remotePlayer: ", m_remotePlayer);
             }
 
-            const auto fakeRemotePlayerAddress = fakeRemotePlayerSocket->local_endpoint();
+            auto const fakeRemotePlayerAddress = m_fakeRemotePlayerSocket->local_endpoint();
             logLine(LogLevel::info, "FakeRemote local endpoint:", fakeRemotePlayerAddress);
-            const auto addressTranslator = this->addressTranslator.lock();
+            auto const addressTranslator = m_addressTranslator.lock();
             if (!addressTranslator)
             {
                 logLine(LogLevel::error, "AddressTranslator already died when rewriting CommPacket");
                 return;
             }
-            const auto publicRemoteFakeAddress = 
+            auto const publicRemoteFakeAddress = 
                 addressTranslator->localToPublic(fakeRemotePlayerAddress);
-            const auto ip = publicRemoteFakeAddress.address().to_v4().to_bytes();
-            const auto port = boost::endian::native_to_big(publicRemoteFakeAddress.port());
+            auto const ip = publicRemoteFakeAddress.address().to_v4().to_bytes();
+            auto const port = boost::endian::native_to_big(publicRemoteFakeAddress.port());
             rewriteAddress(outputBuffer, addressOffset.value(), ip, port);
 
             logLine(LogLevel::info, "Address rewritten as ", publicRemoteFakeAddress);
             logLine(LogLevel::info, "Preparing to receive packet from player to fakeRemote");
-            this->prepareForNextPacketFromClient();
+            prepareForNextPacketFromClient();
         }
         logLine(LogLevel::info, "CommPacket from server will be send to client from proxy.");
         proxy->sendFromProxySocket(PacketView{ outputBuffer }, communicationAddress);
 
-        this->extendLife();
+        extendLife();
     }
 
     void GameConnection::handlePacketFromRemotePlayer
     (
         Buffer buffer,
-        const std::size_t size,
-        const EndPoint& from
+        std::size_t const size,
+        EndPoint const& from
     )
     {
-        if (this->remotePlayer != from)
+        if (m_remotePlayer != from)
         {
-            logLine(LogLevel::warning, "Updating remote player address from ", this->remotePlayer, " to ", from);
-            this->remotePlayer = from;
+            logLine(LogLevel::warning, "Updating remote player address from ", m_remotePlayer, " to ", from);
+            m_remotePlayer = from;
         }
 
         if (PacketView{ { buffer.get(), size } }.isNatNeg())
         {
-            logLine(LogLevel::info, "Forwarding NatNeg Packet from remote ", this->remotePlayer, " to ", this->clientRealAddress);
+            logLine(LogLevel::info, "Forwarding NatNeg Packet from remote ", m_remotePlayer, " to ", m_clientRealAddress);
         }
 
         auto handler = SendHandler{ std::move(buffer), size };
-        this->fakeRemotePlayerSocket.asyncSendTo
+        m_fakeRemotePlayerSocket.asyncSendTo
         (
             handler.getBuffer(),
-            this->clientRealAddress,
+            m_clientRealAddress,
             std::move(handler)
         );
 
-        this->extendLife();
+        extendLife();
     }
 
     void GameConnection::handlePacketToRemotePlayer
     (
         Buffer buffer,
-        const std::size_t size,
-        const EndPoint& from
+        std::size_t const size,
+        EndPoint const& from
     )
     {
-        if (from != this->clientRealAddress)
+        if (from != m_clientRealAddress)
         {
-            logLine(LogLevel::warning, "Updating client address from ", this->clientRealAddress, " to ", from);
-            this->clientRealAddress = from;
+            logLine(LogLevel::warning, "Updating client address from ", m_clientRealAddress, " to ", from);
+            m_clientRealAddress = from;
         }
 
         if (PacketView{ { buffer.get(), size } }.isNatNeg())
         {
-            logLine(LogLevel::info, "Forwarding NatNeg Packet from client ", this->remotePlayer, " to ", this->clientRealAddress);
+            logLine(LogLevel::info, "Forwarding NatNeg Packet from client ", m_remotePlayer, " to ", m_clientRealAddress);
         }
 
         auto handler = SendHandler{ std::move(buffer), size };
-        this->publicSocketForClient.asyncSendTo
+        m_publicSocketForClient.asyncSendTo
         (
             handler.getBuffer(),
-            this->remotePlayer,
+            m_remotePlayer,
             std::move(handler)
         );
 
-        this->extendLife();
+        extendLife();
     }
 }

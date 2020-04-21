@@ -1,33 +1,32 @@
 #pragma once
-#include <cstddef>
-#include <memory>
-#include <string>
-#include <boost/asio/buffer.hpp>
-#include <boost/system/error_code.hpp>
-#include "Logging.h"
+#include "precompiled.h"
+#include <Logging/Logging.h>
 
 namespace CNCOnlineForwarder::Utility
 {
     template<typename Type>
     class SimpleWriteHandler
     {
+    private:
+        std::unique_ptr<std::string> m_data;
+
     public:
         template<typename String>
         SimpleWriteHandler(String&& data) :
-            data{ std::make_unique<std::string>(std::forward<String>(data)) }
+            m_data{ std::make_unique<std::string>(std::forward<String>(data)) }
         {
         }
 
-        boost::asio::const_buffer getData() const noexcept 
-        { 
-            return boost::asio::buffer(*this->data);
+        boost::asio::const_buffer getData() const noexcept
+        {
+            return boost::asio::buffer(*m_data);
         }
 
         void operator()
-        (
-            const boost::system::error_code& code, 
-            const std::size_t bytesSent
-        ) const
+            (
+                boost::system::error_code const& code,
+                std::size_t const bytesSent
+                ) const
         {
             using namespace Logging;
 
@@ -37,15 +36,12 @@ namespace CNCOnlineForwarder::Utility
                 return;
             }
 
-            if (bytesSent != this->data->size())
+            if (bytesSent != m_data->size())
             {
-                logLine<Type>(Level::error, "Only part of packet was sent: ", bytesSent, "/", this->data->size());
+                logLine<Type>(Level::error, "Only part of packet was sent: ", bytesSent, "/", m_data->size());
                 return;
             }
         }
-
-    private:
-        std::unique_ptr<std::string> data;
     };
 
     template<typename Type, typename String>

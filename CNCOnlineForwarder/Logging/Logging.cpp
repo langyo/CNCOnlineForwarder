@@ -1,6 +1,6 @@
 #include "precompiled.h"
-#include "BuildConfiguration.h"
 #include "Logging.h"
+#include <BuildConfiguration.h>
 
 namespace CNCOnlineForwarder::Logging
 {
@@ -26,12 +26,12 @@ namespace CNCOnlineForwarder::Logging
 
 
     Logging::LogProxy::LogProxy(Logging::SeverityLogger& logger, Level level) :
-        logger{ logger },
-        record{ logger.open_record(boost::log::keywords::severity = level) }
+        m_logger{ logger },
+        m_record{ logger.open_record(boost::log::keywords::severity = level) }
     {
-        if (this->record)
+        if (m_record)
         {
-            this->stream.attach_record(this->record);
+            m_stream.attach_record(m_record);
             static constexpr auto levels = std::array<std::string_view, 6>
             {
                 "[trace] ",
@@ -41,16 +41,16 @@ namespace CNCOnlineForwarder::Logging
                 "[error] ",
                 "[fatal] "
             };
-            this->stream << levels.at(level);
+            m_stream << levels.at(level);
         }
     }
 
     Logging::LogProxy::~LogProxy()
     {
-        if (this->record)
+        if (m_record)
         {
-            this->stream.flush();
-            this->logger.push_record(std::move(this->record));
+            m_stream.flush();
+            m_logger.push_record(std::move(m_record));
         }
     }
 
