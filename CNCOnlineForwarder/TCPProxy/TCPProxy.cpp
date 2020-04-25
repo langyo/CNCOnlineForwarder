@@ -35,7 +35,7 @@ namespace CNCOnlineForwarder::TCPProxy
 
         auto const action = [](TCPProxy& self)
         {
-            logLine(LogLevel::info, "NatNegProxy created.");
+            logLine(LogLevel::info, "TCPProxy created.");
             self.prepareForNextConnection();
         };
         boost::asio::defer(self->m_strand, makeWeakHandler(self, action));
