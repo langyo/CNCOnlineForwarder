@@ -1,0 +1,15 @@
+cmake_minimum_required(VERSION 3.16.5)
+project(CNCOnlineForwarder.Exe)
+
+add_executable(${PROJECT_NAME} "Main.cpp")
+target_link_libraries(${PROJECT_NAME} CNCOnlineForwarder)
+if(MSVC)
+    target_compile_options(${PROJECT_NAME} PRIVATE "/W4" "$<$<CONFIG:RELEASE>:/O2>")
+else()
+    target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-Wextra" "-Werror" "$<$<CONFIG:RELEASE>:-O3>")
+    if("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        target_compile_options(${PROJECT_NAME} PRIVATE "-stdlib=libc++")
+    else()
+        # nothing special for gcc at the moment
+    endif()
+endif()
