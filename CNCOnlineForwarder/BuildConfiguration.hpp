@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 
 #ifndef PROJECT_NAME
 static_assert(false, "PROJECT_NAME not defined");

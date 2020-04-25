@@ -1,7 +1,7 @@
 #pragma once
-#include "precompiled.hpp"
-#include <NatNeg/NatNegPacket.hpp>
+#include <precompiled.hpp>
 #include <IOManager.hpp>
+#include <NatNeg/NatNegPacket.hpp>
 #include <Utility/ProxyAddressTranslator.hpp>
 #include <Utility/WithStrand.hpp>
 
@@ -20,7 +20,6 @@ namespace CNCOnlineForwarder::NatNeg
         using AddressV4 = boost::asio::ip::address_v4;
         using NatNegPlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
-
     private:
         struct PrivateConstructor {};
         class ReceiveHandler;

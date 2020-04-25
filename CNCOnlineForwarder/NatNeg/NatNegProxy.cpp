@@ -1,5 +1,5 @@
-#include "precompiled.hpp"
 #include "NatNegProxy.hpp"
+#include <precompiled.hpp>
 #include <NatNeg/InitialPhase.hpp>
 #include <Logging/Logging.hpp>
 #include <Utility/SimpleWriteHandler.hpp>
@@ -24,8 +24,8 @@ namespace CNCOnlineForwarder::NatNeg
     private:
         std::unique_ptr<std::array<char, 1024>> m_buffer;
         std::unique_ptr<EndPoint> m_from;
-    public:
 
+    public:
         static auto create(NatNegProxy* pointer)
         { 
             return makeWeakHandler(pointer, ReceiveHandler{});

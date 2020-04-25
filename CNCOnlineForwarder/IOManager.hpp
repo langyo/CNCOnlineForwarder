@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 
 namespace CNCOnlineForwarder
 {
@@ -22,6 +22,8 @@ namespace CNCOnlineForwarder
         }
 
         IOManager(PrivateConstructor) {}
+
+        auto stopped() { return m_context.stopped(); }
 
         auto stop() { return m_context.stop(); }
 

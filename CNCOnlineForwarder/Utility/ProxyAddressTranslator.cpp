@@ -1,5 +1,5 @@
-#include "precompiled.hpp"
 #include "ProxyAddressTranslator.hpp"
+#include <precompiled.hpp>
 #include <Logging/Logging.hpp>
 #include <Utility/SimpleHTTPClient.hpp>
 #include <Utility/WeakRefHandler.hpp>

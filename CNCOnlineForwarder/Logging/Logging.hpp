@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 
 namespace CNCOnlineForwarder::Logging
 {

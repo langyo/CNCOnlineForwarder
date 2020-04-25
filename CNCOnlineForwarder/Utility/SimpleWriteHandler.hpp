@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 #include <Logging/Logging.hpp>
 
 namespace CNCOnlineForwarder::Utility
@@ -23,10 +23,10 @@ namespace CNCOnlineForwarder::Utility
         }
 
         void operator()
-            (
-                boost::system::error_code const& code,
-                std::size_t const bytesSent
-                ) const
+        (
+            boost::system::error_code const& code,
+            std::size_t const bytesSent
+        ) const
         {
             using namespace Logging;
 

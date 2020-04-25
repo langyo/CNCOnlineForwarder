@@ -1,5 +1,5 @@
-#include "precompiled.hpp"
 #include "InitialPhase.hpp"
+#include <precompiled.hpp>
 #include <NatNeg/GameConnection.hpp>
 #include <NatNeg/NatNegProxy.hpp>
 #include <Logging/Logging.hpp>
@@ -25,6 +25,10 @@ namespace CNCOnlineForwarder::NatNeg
 
     class InitialPhase::ReceiveHandler
     {
+    private:
+        std::unique_ptr<std::array<char, 1024>> m_buffer;
+        std::unique_ptr<EndPoint> m_from;
+
     public:
         static auto create(InitialPhase* pointer)
         {
@@ -33,12 +37,12 @@ namespace CNCOnlineForwarder::NatNeg
 
         boost::asio::mutable_buffer getBuffer() 
         { 
-            return boost::asio::buffer(*buffer); 
+            return boost::asio::buffer(*m_buffer); 
         }
 
         EndPoint& getFrom() 
         { 
-            return *from; 
+            return *m_from; 
         }
 
         void operator()(InitialPhase& self, ErrorCode const& code, std::size_t const bytesReceived) const
@@ -52,24 +56,21 @@ namespace CNCOnlineForwarder::NatNeg
             }
 
             // When receiving, server is already resolved
-            if (*from != self.m_server->getEndPoint())
+            if (*m_from != self.m_server->getEndPoint())
             {
-                logLine(LogLevel::warning, "Packet is not from server, but from ", *from,", discarded");
+                logLine(LogLevel::warning, "Packet is not from server, but from ", *m_from,", discarded");
                 return;
             }
 
-            auto const packet = PacketView{ {buffer->data(), bytesReceived} };
+            auto const packet = PacketView{ {m_buffer->data(), bytesReceived} };
             return self.handlePacketFromServer(packet);
         }
 
     private:
         ReceiveHandler() :
-            buffer{ std::make_unique<std::array<char, 1024>>() },
-            from{ std::make_unique<EndPoint>() }
+            m_buffer{ std::make_unique<std::array<char, 1024>>() },
+            m_from{ std::make_unique<EndPoint>() }
         {}
-
-        std::unique_ptr<EndPoint> from;
-        std::unique_ptr<std::array<char, 1024>> buffer;
     };
 
     std::shared_ptr<InitialPhase> InitialPhase::create

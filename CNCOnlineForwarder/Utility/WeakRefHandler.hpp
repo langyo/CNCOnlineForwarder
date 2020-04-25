@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 #include <Logging/Logging.hpp>
 
 namespace CNCOnlineForwarder::Utility
@@ -75,7 +75,9 @@ namespace CNCOnlineForwarder::Utility
         else
         {
             static_assert(std::is_pointer_v<T>);
-            return WeakRefHandler<std::remove_pointer_t<T>, HandlerValue>
+            using ActualType = std::remove_pointer_t<T>;
+            static_assert(std::is_base_of_v<std::enable_shared_from_this<ActualType>, ActualType>);
+            return WeakRefHandler<ActualType, HandlerValue>
             { 
                 pointer->weak_from_this(), 
                 std::forward<Handler>(handler)

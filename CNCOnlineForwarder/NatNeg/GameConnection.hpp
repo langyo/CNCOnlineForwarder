@@ -1,7 +1,7 @@
 #pragma once
-#include "precompiled.hpp"
-#include <NatNeg/NatNegPacket.hpp>
+#include <precompiled.hpp>
 #include <IOManager.hpp>
+#include <NatNeg/NatNegPacket.hpp>
 #include <Utility/ProxyAddressTranslator.hpp>
 #include <Utility/WithStrand.hpp>
 
@@ -21,7 +21,6 @@ namespace CNCOnlineForwarder::NatNeg
         using NatNegPlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
         using Buffer = std::unique_ptr<char[]>;
-
     private:
         struct PrivateConstructor {};
 

@@ -1,5 +1,5 @@
 #pragma once
-#include "precompiled.hpp"
+#include <precompiled.hpp>
 #include <IOManager.hpp>
 
 namespace CNCOnlineForwarder::Utility {
@@ -28,7 +28,11 @@ namespace CNCOnlineForwarder::Utility {
     class WithStrand : public Details::WithStrandBase<T>
     {
     public:
+        using Type = T;
+
+    public:
         using Details::WithStrandBase<T>::WithStrandBase;
+        
     };
 
     template<>
@@ -101,7 +105,7 @@ namespace CNCOnlineForwarder::Utility {
             ResolveHandler&& resolveHandler
         )
         {
-            m_object.async_resolve
+            this->m_object.async_resolve
             (
                 host,
                 service,
