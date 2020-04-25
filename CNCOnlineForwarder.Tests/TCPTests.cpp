@@ -4,7 +4,6 @@
 #include <IOManager.hpp>
 #include <TCPProxy/TCPProxy.hpp>
 #include <boost/format.hpp>
-#include <mbctype.h>
 
 using CNCOnlineForwarder::IOManager;
 using CNCOnlineForwarder::TCPProxy::TCPProxy;
