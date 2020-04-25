@@ -11,20 +11,32 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, windows-latest]
         include:
           - os: windows-latest
             triplet: x64-windows
-            vcpkgCommitId: 'HEAD'
-            vcpkgPackages: 'boost'
+            vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
+            vcpkgPackages: 
+              - boost-algorithm
+              - boost-asio
+              - boost-beast
+              - boost-container-hash
+              - boost-endian
+              - boost-log
+              - boost-system
+              - boost-test
           - os: ubuntu-latest
             triplet: x64-linux
-            vcpkgCommitId: 'HEAD'
-            vcpkgPackages: 'boost'
-          - os: macos-latest
-            triplet: x64-osx
-            vcpkgCommitId: 'HEAD'
-            vcpkgPackages: 'boost'
+            vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
+            vcpkgPackages:
+              - boost-algorithm
+              - boost-asio
+              - boost-beast
+              - boost-container-hash
+              - boost-endian
+              - boost-log
+              - boost-system
+              - boost-test
 
     steps:
       - uses: actions/checkout@v1
