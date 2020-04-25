@@ -129,10 +129,9 @@ namespace CNCOnlineForwarder::NatNeg
                 std::copy_n(m_natNegPacket.begin() + natNegIDPosition, sizeof(id), reinterpret_cast<char*>(&id));
                 return id;
             }
-            break;
+            default:
+                return std::nullopt;
             }
-
-            return std::nullopt;
         }
 
         // Returns: NatNegID and PlayerID of the packet,
@@ -179,13 +178,10 @@ namespace CNCOnlineForwarder::NatNeg
             {
             case NatNegStep::connect:
             case NatNegStep::connectPing:
-            {
                 return 12;
+            default:
+                return std::nullopt;
             }
-            break;
-            }
-
-            return std::nullopt;
         }
     };
 

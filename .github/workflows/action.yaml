@@ -29,12 +29,12 @@ jobs:
 
       - uses: lukka/get-cmake@latest
       - name: dir
-        run: find ${{ runner.workspace }}
+        run: 'find ${{ runner.workspace }}'
         if: "!contains( matrix.os, 'windows')"
       - name: dir
-        run: gci -recurse ${{ runner.workspace }}
+        run: 'gci -recurse ${{ runner.workspace }}'
         if: contains( matrix.os, 'windows')
-      - name: Restore artifacts, or run vcpkg, build and cache artifacts
+      - name: 'Restore artifacts, or run vcpkg, build and cache artifacts'
         uses: lukka/run-vcpkg@master
         id: runvcpkg
         with:
@@ -42,8 +42,6 @@ jobs:
           vcpkgTriplet: '${{ matrix.triplet }}'
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
-      - name: Prints outputs of run-vcpkg task
-        run: echo "'${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_ROOT_OUT }}' '${{  steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}' "
       - name: Run CMake+Ninja without triplet
         uses: lukka/run-cmake@master
         id: runcmake
@@ -54,27 +52,5 @@ jobs:
           useVcpkgToolchainFile: true
           buildWithCMakeArgs: '-- -v'
           buildDirectory: '${{ runner.workspace }}/b/ninja/'
-      - name: Run CMake+Ninja with triplet (cmd)
-        uses: lukka/run-cmake@master
-        id: runcmake_cmd
-        with:
-          cmakeGenerator: 'Ninja'  
-          cmakeListsOrSettingsJson: 'CMakeListsTxtBasic'
-          cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
-          useVcpkgToolchainFile: true
-          buildWithCMakeArgs: '-- -v'
-          vcpkgTriplet: ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}
-          buildDirectory: '${{ runner.workspace }}/b/ninja/'
-      - name: Run CMake+Ninja with triplet (bash)
-        if: false
-        uses: lukka/run-cmake@master
-        id: runcmake_bash
-        with:
-          cmakeGenerator: 'Ninja'  
-          cmakeListsOrSettingsJson: 'CMakeListsTxtBasic'
-          cmakeListsTxtPath: '${{ github.workspace }}/cmakelists.txt/CMakeLists.txt'
-          useVcpkgToolchainFile: true
-          buildWithCMakeArgs: '-- -v'
-          vcpkgTriplet: ${{ steps.runvcpkg.outputs.RUNVCPKG_VCPKG_TRIPLET_OUT }}
-          buildDirectory: '${{ runner.workspace }}/b/ninja-bash/'
-          useShell: bash
+      - name: Test
+        run: 'cd "${{ runner.workspace }}/b/ninja/" && ctest'
