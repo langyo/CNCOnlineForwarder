@@ -16,27 +16,11 @@ jobs:
           - os: windows-latest
             triplet: x64-windows
             vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
-            vcpkgPackages: 
-              - boost-algorithm
-              - boost-asio
-              - boost-beast
-              - boost-container-hash
-              - boost-endian
-              - boost-log
-              - boost-system
-              - boost-test
+            vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
           - os: ubuntu-latest
             triplet: x64-linux
             vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
-            vcpkgPackages:
-              - boost-algorithm
-              - boost-asio
-              - boost-beast
-              - boost-container-hash
-              - boost-endian
-              - boost-log
-              - boost-system
-              - boost-test
+            vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
 
     steps:
       - uses: actions/checkout@v1
