@@ -126,7 +126,7 @@ namespace CNCOnlineForwarder::NatNeg
         );
     }
 
-    void NatNegProxy::removeConnection(NatNegPlayerID const id)
+    void NatNegProxy::removeConnection(PlayerID const id)
     {
         auto action = [id](NatNegProxy& self)
         {
@@ -161,23 +161,23 @@ namespace CNCOnlineForwarder::NatNeg
         }
 
         auto const step = packet.getStep();
-        auto const natNegPlayerIDHolder = packet.getNatNegPlayerID();
-        if (!natNegPlayerIDHolder.has_value())
+        auto const playerIDHolder = packet.getNatNegPlayerID();
+        if (!playerIDHolder.has_value())
         {
             logLine(LogLevel::info, "Packet of step ", step, " does not have NatNegPlayerID, discarded.");
             return;
         }
-        auto const natNegPlayerID = natNegPlayerIDHolder.value();
+        auto const playerID = playerIDHolder.value();
 
-        auto& initialPhaseRef = m_initialPhases[natNegPlayerID];
+        auto& initialPhaseRef = m_initialPhases[playerID];
         if (initialPhaseRef.expired())
         {
-            logLine(LogLevel::info, "New NatNegPlayerID, creating InitialPhase: ", natNegPlayerID);
+            logLine(LogLevel::info, "New NatNegPlayerID, creating InitialPhase: ", playerID);
             initialPhaseRef = InitialPhase::create
             (
                 m_objectMaker,
                 weak_from_this(),
-                natNegPlayerID,
+                playerID,
                 m_serverHostName,
                 m_serverPort
             );
@@ -186,8 +186,8 @@ namespace CNCOnlineForwarder::NatNeg
         auto const initialPhase = initialPhaseRef.lock();
         if (!initialPhase)
         {
-            logLine(LogLevel::error, "InitialPhase already expired: ", natNegPlayerID);
-            removeConnection(natNegPlayerID);
+            logLine(LogLevel::error, "InitialPhase already expired: ", playerID);
+            removeConnection(playerID);
             return;
         }
 

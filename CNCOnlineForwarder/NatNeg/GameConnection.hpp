@@ -18,7 +18,7 @@ namespace CNCOnlineForwarder::NatNeg
         using Socket = Utility::WithStrand<boost::asio::ip::udp::socket>;
         using Timer = Utility::WithStrand<boost::asio::steady_timer>;
         using ProxyAddressTranslator = Utility::ProxyAddressTranslator;
-        using NatNegPlayerID = NatNegPlayerID;
+        using PlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
         using Buffer = std::unique_ptr<char[]>;
     private:

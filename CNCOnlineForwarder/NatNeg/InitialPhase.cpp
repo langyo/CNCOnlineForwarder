@@ -77,7 +77,7 @@ namespace CNCOnlineForwarder::NatNeg
     (
         IOManager::ObjectMaker const& objectMaker,
         std::weak_ptr<NatNegProxy> const& proxy,
-        NatNegPlayerID const id,
+        PlayerID const id,
         std::string const& natNegServer,
         std::uint16_t const natNegPort
     )

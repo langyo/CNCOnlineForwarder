@@ -18,7 +18,7 @@ namespace CNCOnlineForwarder::NatNeg
         using Socket = Utility::WithStrand<boost::asio::ip::udp::socket>;
         using ProxyAddressTranslator = Utility::ProxyAddressTranslator;
         using AddressV4 = boost::asio::ip::address_v4;
-        using NatNegPlayerID = NatNegPlayerID;
+        using PlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
     private:
         struct PrivateConstructor {};
@@ -55,7 +55,7 @@ namespace CNCOnlineForwarder::NatNeg
 
         void sendFromProxySocket(PacketView const packetView, EndPoint const& to);
 
-        void removeConnection(NatNegPlayerID const id);
+        void removeConnection(PlayerID const id);
 
     private:
         void prepareForNextPacketToServer();

@@ -20,7 +20,7 @@ namespace CNCOnlineForwarder::NatNeg
         using Timer = Utility::WithStrand<boost::asio::steady_timer>;
         using Resolver = Utility::WithStrand<boost::asio::ip::udp::resolver>;
         using ProxyAddressTranslator = Utility::ProxyAddressTranslator;
-        using NatNegPlayerID = NatNegPlayerID;
+        using PlayerID = NatNegPlayerID;
         using PacketView = NatNegPacketView;
         
     private:
@@ -86,7 +86,7 @@ namespace CNCOnlineForwarder::NatNeg
         std::weak_ptr<NatNegProxy> m_proxy;
         FutureConnection m_connection;
 
-        NatNegPlayerID m_id;
+        PlayerID m_id;
         FutureEndPoint m_server;
         EndPoint m_clientCommunication;
 
@@ -97,7 +97,7 @@ namespace CNCOnlineForwarder::NatNeg
         (
             IOManager::ObjectMaker const& objectMaker,
             std::weak_ptr<NatNegProxy> const& proxy,
-            NatNegPlayerID const id,
+            PlayerID const id,
             std::string const& natNegServer,
             std::uint16_t const natNegPort
         );
@@ -107,7 +107,7 @@ namespace CNCOnlineForwarder::NatNeg
             PrivateConstructor,
             IOManager::ObjectMaker const& objectMaker,
             std::weak_ptr<NatNegProxy> const& proxy,
-            NatNegPlayerID const id
+            PlayerID const id
         );
 
         InitialPhase(InitialPhase const&) = delete;
