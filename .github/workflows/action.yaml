@@ -54,4 +54,5 @@ jobs:
           buildWithCMakeArgs: '-- -v'
           buildDirectory: '${{ runner.workspace }}/b/ninja/'
       - name: Test
+        if: false
         run: 'cd "${{ runner.workspace }}/b/ninja/"' # && ctest
