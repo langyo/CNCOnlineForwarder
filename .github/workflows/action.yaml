@@ -44,7 +44,6 @@ jobs:
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
       - name: Run CMake+Ninja without triplet
         uses: lukka/run-cmake@master
-        if: false
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'  
@@ -55,4 +54,4 @@ jobs:
           buildDirectory: '${{ runner.workspace }}/b/ninja/'
       - name: Test
         if: false
-        run: 'cd "${{ runner.workspace }}/b/ninja/"' # && ctest
+        run: 'cd "${{ runner.workspace }}/b/ninja/" && ctest'
