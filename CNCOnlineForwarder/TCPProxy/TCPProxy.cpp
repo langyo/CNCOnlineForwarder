@@ -57,7 +57,7 @@ namespace CNCOnlineForwarder::TCPProxy
 
     void TCPProxy::prepareForNextConnection()
     {
-        auto const handler = [](TCPProxy& self, ErrorCode const& code, Socket::Type socket)
+        auto const handler = [](TCPProxy& self, ErrorCode const& code, Socket::Type/* socket*/)
         {
             self.prepareForNextConnection();
             if (code.failed())

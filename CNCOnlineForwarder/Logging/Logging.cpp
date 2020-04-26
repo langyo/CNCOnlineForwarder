@@ -56,8 +56,11 @@ namespace CNCOnlineForwarder::Logging
 
     Logging::LogProxy log(Level level)
     {
-        static auto loggingSetup = Logging{};
-        static auto logger = Logging::SeverityLogger{};
+        static auto logger = ([]
+        {
+            [[maybe_unused]] auto const loggingSetup = Logging{};
+            return Logging::SeverityLogger{};
+        })();
         return Logging::LogProxy{ logger, level };
     }
 
@@ -71,5 +74,5 @@ namespace CNCOnlineForwarder::Logging
         firstTime = false;
         boost::log::core::get()->set_filter(boost::log::trivial::severity >= level);
     }
-    
+
 }
