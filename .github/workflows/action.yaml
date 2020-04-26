@@ -44,6 +44,7 @@ jobs:
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
       - name: Run CMake+Ninja without triplet
         uses: lukka/run-cmake@master
+        if: false
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'  
