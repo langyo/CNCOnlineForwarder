@@ -48,8 +48,8 @@ namespace CNCOnlineForwarder::TCPProxy
         PrivateConstructor,
         IOManager::ObjectMaker const& objectMaker,
         std::uint16_t const localPort,
-        std::string_view const serverHostName,
-        std::uint16_t const serverPort
+        std::string_view const/* serverHostName*/,
+        std::uint16_t const/* serverPort*/
     ) :
         m_strand{ objectMaker.makeStrand() },
         m_acceptor{ m_strand, EndPoint{TCP::v4(), localPort} }
