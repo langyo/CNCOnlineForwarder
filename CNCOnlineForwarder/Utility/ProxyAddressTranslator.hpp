@@ -30,7 +30,7 @@ namespace CNCOnlineForwarder::Utility
             IOManager::ObjectMaker const& objectMaker
         );
 
-        AddressV4 getPublicAddress() const;
+        AddressV4 getUntranslated() const;
 
         void setPublicAddress(AddressV4 const& newPublicAddress);
 

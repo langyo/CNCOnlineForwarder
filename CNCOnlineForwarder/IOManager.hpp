@@ -9,7 +9,7 @@ namespace CNCOnlineForwarder
         using ContextType = boost::asio::io_context;
         using StrandType = decltype(boost::asio::make_strand(std::declval<ContextType&>()));
         class ObjectMaker;
-    private:
+    protected:
         struct PrivateConstructor{};
         ContextType m_context;
     public:

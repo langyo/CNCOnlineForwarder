@@ -1,16 +1,17 @@
 cmake_minimum_required(VERSION 3.16.5)
 project(CNCOnlineForwarder)
-find_package(Boost 1.70 REQUIRED log system)
+find_package(Boost 1.74 REQUIRED log_setup log system)
 
 add_library(${PROJECT_NAME})
-target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_17)
+target_compile_features(${PROJECT_NAME} PUBLIC cxx_std_20)
 target_compile_definitions(${PROJECT_NAME} PRIVATE 
     PROJECT_NAME="${PROJECT_NAME}"
 )
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE "/W4" "$<$<CONFIG:RELEASE>:/O2>")
-    if (MSVC_VERSION GREATER_EQUAL 1910)
-        target_compile_options(${PROJECT_NAME} PUBLIC "/permissive-")
+    target_compile_options(${PROJECT_NAME} PUBLIC "/permissive-" "/await" "/Zc:__cplusplus")
+    if (MSVC_VERSION LESS 1914)
+        message(FATAL_ERROR "MSVC too old")
     endif()
 else()
     target_compile_options(${PROJECT_NAME} PRIVATE "-Wall" "-Wextra" "-Werror" "$<$<CONFIG:RELEASE>:-O3>")

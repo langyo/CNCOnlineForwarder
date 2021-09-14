@@ -39,7 +39,7 @@ namespace CNCOnlineForwarder::Utility
     {
     }
 
-    ProxyAddressTranslator::AddressV4 ProxyAddressTranslator::getPublicAddress() const
+    ProxyAddressTranslator::AddressV4 ProxyAddressTranslator::getUntranslated() const
     {
         auto const lock = std::scoped_lock{ m_mutex };
         return m_publicAddress;
@@ -60,7 +60,7 @@ namespace CNCOnlineForwarder::Utility
     ) const
     {
         auto publicEndPoint = endPoint;
-        publicEndPoint.address(getPublicAddress());
+        publicEndPoint.address(getUntranslated());
         return publicEndPoint;
     }
 

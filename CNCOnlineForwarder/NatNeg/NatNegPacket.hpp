@@ -3,6 +3,15 @@
 
 namespace CNCOnlineForwarder::NatNeg
 {
+    namespace Details
+    {
+        using namespace std::string_view_literals;
+        inline constexpr auto natNegMagic = "\xFD\xFC\x1E\x66\x6A\xB2"sv;
+        inline constexpr auto gameName = "redalert3pc"sv;
+    }
+    using Details::natNegMagic;
+    using Details::gameName;
+
     enum class NatNegStep : char
     {
         init = 0,
@@ -76,8 +85,6 @@ namespace CNCOnlineForwarder::NatNeg
 
         bool isNatNeg() const noexcept
         {
-            using namespace std::string_view_literals;
-            static constexpr auto natNegMagic = "\xFD\xFC\x1E\x66\x6A\xB2"sv;
             static constexpr auto versionSize = 1;
             static constexpr auto stepSize = 1;
 
@@ -86,6 +93,7 @@ namespace CNCOnlineForwarder::NatNeg
                 return false;
             }
 
+            // m_natNegPacket.rfind(x, 0) => m_natNegPacket.starts_with(x)
             if (m_natNegPacket.rfind(natNegMagic, 0) == m_natNegPacket.npos)
             {
                 return false;
