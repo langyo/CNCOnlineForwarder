@@ -35,7 +35,7 @@ jobs:
         run: 'gci -recurse ${{ runner.workspace }}'
         if: contains( matrix.os, 'windows')
       - name: 'Restore artifacts, or run vcpkg, build and cache artifacts'
-        uses: lukka/run-vcpkg@master
+        uses: lukka/run-vcpkg@latest
         id: runvcpkg
         with:
           vcpkgArguments: '${{ matrix.vcpkgPackages }}'
@@ -43,7 +43,7 @@ jobs:
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
       - name: Run CMake+Ninja without triplet
-        uses: lukka/run-cmake@master
+        uses: lukka/run-cmake@latest
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'  
