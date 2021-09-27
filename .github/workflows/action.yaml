@@ -15,11 +15,11 @@ jobs:
         include:
           - os: windows-latest
             triplet: x64-windows
-            vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
+            vcpkgCommitId: 7e94e6d35762949e6de72d9526807006ccc98b57
             vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
           - os: ubuntu-latest
             triplet: x64-linux
-            vcpkgCommitId: '09af1e9b55fdb79ef5aa04de3f1710759b2de990'
+            vcpkgCommitId: 7e94e6d35762949e6de72d9526807006ccc98b57
             vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
 
     steps:
@@ -35,7 +35,7 @@ jobs:
         run: 'gci -recurse ${{ runner.workspace }}'
         if: contains( matrix.os, 'windows')
       - name: 'Restore artifacts, or run vcpkg, build and cache artifacts'
-        uses: lukka/run-vcpkg@latest
+        uses: lukka/run-vcpkg@main
         id: runvcpkg
         with:
           vcpkgArguments: '${{ matrix.vcpkgPackages }}'
@@ -43,7 +43,7 @@ jobs:
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
       - name: Run CMake+Ninja without triplet
-        uses: lukka/run-cmake@latest
+        uses: lukka/run-cmake@main
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'  
