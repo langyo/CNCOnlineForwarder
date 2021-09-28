@@ -17,10 +17,12 @@ jobs:
             triplet: x64-windows
             vcpkgCommitId: 7e94e6d35762949e6de72d9526807006ccc98b57
             vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
+            artifactId: windows-built-files
           - os: ubuntu-latest
             triplet: x64-linux
             vcpkgCommitId: 7e94e6d35762949e6de72d9526807006ccc98b57
             vcpkgPackages: 'boost-algorithm boost-asio boost-beast boost-container-hash boost-endian boost-log boost-system boost-test'
+            artifactId: ubuntu-built-files
 
     steps:
       - uses: actions/checkout@v1
@@ -28,12 +30,6 @@ jobs:
           submodules: true
 
       - uses: lukka/get-cmake@latest
-      - name: dir
-        run: 'find ${{ runner.workspace }}'
-        if: "!contains( matrix.os, 'windows')"
-      - name: dir
-        run: 'gci -recurse ${{ runner.workspace }}'
-        if: contains( matrix.os, 'windows')
       - name: 'Restore artifacts, or run vcpkg, build and cache artifacts'
         uses: lukka/run-vcpkg@main
         id: runvcpkg
@@ -49,9 +45,17 @@ jobs:
           cmakeGenerator: 'Ninja'  
           cmakeListsOrSettingsJson: 'CMakeListsTxtBasic'
           cmakeListsTxtPath: '${{ github.workspace }}/CMakeLists.txt'
+          cmakeBuildType: Release
           useVcpkgToolchainFile: true
           buildWithCMakeArgs: '-- -v'
           buildDirectory: '${{ runner.workspace }}/b/ninja/'
-      - name: Test
-        if: false
-        run: 'cd "${{ runner.workspace }}/b/ninja/" && ctest'
+      - name: Upload Windows build artifact
+        uses: actions/upload-artifact@v2.2.4
+        with:
+          # Artifact name
+          name: '${{ matrix.artifactId }}' # optional, default is artifact
+          # A file, directory or wildcard pattern that describes what to upload
+          path: |
+            ${{ runner.workspace }}/b/ninja/CNCOnlineForwarder*/*
+            !${{ runner.workspace }}/b/ninja/CNCOnlineForwarder*/*cmake*
+            !${{ runner.workspace }}/b/ninja/CNCOnlineForwarder*/CMakeFiles/**/*
