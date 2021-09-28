@@ -1,5 +1,5 @@
 # C&C:Online Forwarder
-[![https://ci.appveyor.com/project/BSG-75/CNCOnlineForwarder](https://ci.appveyor.com/api/projects/status/github/BSG-75/CNCOnlineForwarder?svg=true)](https://ci.appveyor.com/project/BSG-75/CNCOnlineForwarder)
+[![Build Status](https://github.com/lanyizi/CNCOnlineForwarder/workflows/build-cnconline-forwarder-x/badge.svg)](https://github.com/lanyizi/CNCOnlineForwarder/actions)
 
 An unofficial proxy server for [C&amp;C:Online](https://cnc-online.net).
 
@@ -16,10 +16,10 @@ Planned features:
 - [ ] Local HTTP server: avoid the problem of _"Failed to connect to servers. Please check to make sure you have an active connection to the Internet"_ during log in of C&C:Online caused by high latency between http.server.cnc-online.net and player's computer.
 
 ## How to run this server
-You can download built binaries from [AppVeyor](https://ci.appveyor.com/project/BSG-75/CNCOnlineForwarder/build/artifacts). To run the server, make sure to allow this program in your Firewall Settings, since it will need to receive inbound UDP packets before sending them out. 
+[Prebuilt binaries](https://nightly.link/lanyizi/CNCOnlineForwarder/workflows/action.yaml/master) can be downloaded from [Github actions](https://github.com/lanyizi/CNCOnlineForwarder/actions). To run the server, make sure to allow this program in your Firewall Settings, since it will need to receive inbound UDP packets before sending them out. 
 
-Currently only Windows Version is available (I'm developing it with Visual Studio). 
-_But_ since the server part only uses C++ Standard Library and Boost, you should be able to port it to other platforms as well. If you can bring here some CMake build files, that would be really nice!
+On Windows, normally we can just use the prebuilt binaries.
+But you can also build it by yourself. You need to have Boost installed (at least 1.74), then just use CMake to build the project.
 
 Before I could write the client part of this project, you'll have to edit your `hosts` file in order to let the game use your proxy server.
 It should look like this:
