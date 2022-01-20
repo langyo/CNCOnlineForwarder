@@ -31,7 +31,7 @@ jobs:
 
       - uses: lukka/get-cmake@latest
       - name: 'Restore artifacts, or run vcpkg, build and cache artifacts'
-        uses: lukka/run-vcpkg@main
+        uses: lukka/run-vcpkg@v7
         id: runvcpkg
         with:
           vcpkgArguments: '${{ matrix.vcpkgPackages }}'
@@ -39,7 +39,7 @@ jobs:
           vcpkgDirectory: '${{ runner.workspace }}/b/vcpkg'
           vcpkgGitCommitId: '${{ matrix.vcpkgCommitId }}'
       - name: Run CMake+Ninja without triplet
-        uses: lukka/run-cmake@main
+        uses: lukka/run-cmake@v3
         id: runcmake
         with:
           cmakeGenerator: 'Ninja'  
