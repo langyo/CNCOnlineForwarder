@@ -2,7 +2,7 @@
 # Released under the term specified in file LICENSE.txt
 # SPDX short identifier: MIT
 name: build-cnconline-forwarder-x
-on: [push]
+on: [push, workflow_dispatch]
 
 jobs:
   job:
