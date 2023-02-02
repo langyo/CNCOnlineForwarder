@@ -1,3 +1,8 @@
+# Project Archived
+Check out https://ra3battle.net and this project: https://github.com/RA3BattleNet/Relay
+
+---
+
 # C&C:Online Forwarder
 [![Build Status](https://github.com/lanyizi/CNCOnlineForwarder/workflows/build-cnconline-forwarder-x/badge.svg)](https://github.com/lanyizi/CNCOnlineForwarder/actions)
 
